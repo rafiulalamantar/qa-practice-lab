@@ -28,3 +28,4 @@ Thumbs.db
 
 # Vercel env values prepared locally; never commit
 .env.vercel
+.env.tidb

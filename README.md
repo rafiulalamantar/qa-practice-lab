@@ -71,6 +71,11 @@ The MySQL run wipes and rebuilds `qa_practice_lab_test` only, never the dev data
 
 ## Deploying to Vercel
 
+> **Live:** https://qa-practice-lab-six.vercel.app, backed by the TiDB Cloud Starter instance `qa-practice-lab`
+> (Singapore, $0 spending limit), database `qa_practice_lab`. Its credentials are Vercel environment variables
+> (`DB_*`), with a local git-ignored copy in `.env.tidb`. TiDB's own Vercel integration also works: the app falls
+> back to the `TIDB_*` variables it injects.
+
 1. **Create a managed MySQL database.** Vercel does not host MySQL. Good free or cheap options are TiDB Cloud
    Serverless (MySQL compatible), Aiven for MySQL, and Railway. Note the host, port, user, password and database name.
    Pick a region close to your Vercel function region (default `iad1`, US East).
