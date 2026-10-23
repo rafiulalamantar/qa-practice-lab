@@ -174,6 +174,18 @@ class EcomApiTest extends TestCase
         $this->assertDatabaseHas('users', ['email' => 'demo@practice.test']);
     }
 
+    public function test_migrate_hook_requires_secret_and_is_idempotent(): void
+    {
+        config(['practice.cron_secret' => 's3cret']);
+
+        $this->postJson('/api/cron/migrate')->assertForbidden();
+        $this->postJson('/api/cron/migrate', [], ['Authorization' => 'Bearer wrong'])->assertForbidden();
+        $this->postJson('/api/cron/migrate', [], ['Authorization' => 'Bearer s3cret'])->assertOk();
+        $this->postJson('/api/cron/migrate', [], ['Authorization' => 'Bearer s3cret'])->assertOk();
+
+        $this->assertSame(12, Product::count());
+    }
+
     public function test_chaos_header_is_echoed(): void
     {
         $this->postJson('/api/ecom/auth/login', ['userEmail' => 'demo@practice.test', 'userPassword' => 'Demo@1234'], ['X-Chaos-Mode' => '1'])

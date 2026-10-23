@@ -10,6 +10,7 @@ use App\Http\Middleware\NormalizeAuthorizationHeader;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/cron/prune', [CronController::class, 'prune'])->withoutMiddleware('throttle:api');
+Route::post('/cron/migrate', [CronController::class, 'migrate'])->middleware('throttle:auth');
 
 Route::prefix('ecom')->middleware([NormalizeAuthorizationHeader::class, ChaosLatency::class])->group(function () {
     Route::middleware('throttle:auth')->group(function () {

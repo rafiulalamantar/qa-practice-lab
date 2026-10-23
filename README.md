@@ -74,15 +74,9 @@ The MySQL run wipes and rebuilds `qa_practice_lab_test` only, never the dev data
 1. **Create a managed MySQL database.** Vercel does not host MySQL. Good free or cheap options are TiDB Cloud
    Serverless (MySQL compatible), Aiven for MySQL, and Railway. Note the host, port, user, password and database name.
    Pick a region close to your Vercel function region (default `iad1`, US East).
-2. **Run migrations from your machine** against that database (never during the Vercel build):
-   ```bash
-   DB_HOST=… DB_PORT=… DB_DATABASE=… DB_USERNAME=… DB_PASSWORD=… \
-   MYSQL_ATTR_SSL_CA=/etc/ssl/cert.pem php artisan migrate --seed --force
-   ```
-   (`/etc/ssl/cert.pem` is the macOS CA bundle.)
-3. **Push this folder to GitHub and import it in Vercel** (Framework preset: *Other*). `vercel.json` already sets the
+2. **Push this folder to GitHub and import it in Vercel** (Framework preset: *Other*). `vercel.json` already sets the
    PHP runtime, routing, cron and the serverless-safe settings (`/tmp` caches, cookie sessions, stderr logs).
-4. **Add environment variables** in Vercel → Settings → Environment Variables:
+3. **Add environment variables** in Vercel → Settings → Environment Variables:
 
    | Name | Value |
    |---|---|
@@ -92,7 +86,13 @@ The MySQL run wipes and rebuilds `qa_practice_lab_test` only, never the dev data
    | `MYSQL_ATTR_SSL_CA` | `/etc/pki/tls/certs/ca-bundle.crt` |
    | `CRON_SECRET` | any long random string |
 
-5. Deploy, then open `/up` (health check) and `/client/auth/login`.
+4. **Deploy, then create the tables** with the post-deploy hook. It runs `migrate --force` and the idempotent
+   seeders on Vercel itself, so the production DB password never leaves Vercel. It is safe to re-run after every
+   deploy that adds migrations:
+   ```bash
+   curl -X POST https://<your-project>.vercel.app/api/cron/migrate -H "Authorization: Bearer $CRON_SECRET"
+   ```
+5. Open `/up` (health check) and `/client/auth/login`.
 
 ### Things to know on Vercel
 
