@@ -1,0 +1,55 @@
+{
+    "$schema": "https://openapi.vercel.sh/vercel.json",
+    "framework": null,
+    "functions": {
+        "api/index.php": {
+            "runtime": "vercel-php@0.9.0",
+            "maxDuration": 15
+        }
+    },
+    "routes": [
+        {
+            "src": "/assets/(.*)",
+            "dest": "/public/assets/$1",
+            "headers": {
+                "Cache-Control": "public, max-age=86400"
+            }
+        },
+        {
+            "src": "/images/(.*)",
+            "dest": "/public/images/$1",
+            "headers": {
+                "Cache-Control": "public, max-age=604800"
+            }
+        },
+        {
+            "src": "/(favicon\\.svg|favicon\\.ico|robots\\.txt)",
+            "dest": "/public/$1"
+        },
+        {
+            "src": "/(.*)",
+            "dest": "/api/index.php"
+        }
+    ],
+    "crons": [
+        {
+            "path": "/api/cron/prune",
+            "schedule": "0 3 * * *"
+        }
+    ],
+    "env": {
+        "APP_ENV": "production",
+        "APP_DEBUG": "false",
+        "APP_CONFIG_CACHE": "/tmp/config.php",
+        "APP_EVENTS_CACHE": "/tmp/events.php",
+        "APP_PACKAGES_CACHE": "/tmp/packages.php",
+        "APP_ROUTES_CACHE": "/tmp/routes.php",
+        "APP_SERVICES_CACHE": "/tmp/services.php",
+        "VIEW_COMPILED_PATH": "/tmp",
+        "CACHE_STORE": "database",
+        "SESSION_DRIVER": "cookie",
+        "LOG_CHANNEL": "stderr",
+        "QUEUE_CONNECTION": "sync",
+        "DB_CONNECTION": "mysql"
+    }
+}
