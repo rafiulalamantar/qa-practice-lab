@@ -11,6 +11,10 @@ use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
 {
+    private const PASSWORD_MISMATCH_MESSAGE = [
+        'confirmPassword.same' => 'Password and Confirm Password must match with each other.',
+    ];
+
     public function register(Request $request): JsonResponse
     {
         $data = $request->validate([
@@ -20,11 +24,8 @@ class AuthController extends Controller
             'userMobile' => ['required', 'digits:10'],
             'occupation' => ['nullable', 'in:Doctor,Student,Engineer,Scientist'],
             'gender' => ['nullable', 'in:Male,Female'],
-            'userPassword' => ['required', Password::min(8)->mixedCase()->numbers()->symbols()],
-            'confirmPassword' => ['required', 'same:userPassword'],
-        ], [
-            'confirmPassword.same' => 'Password and Confirm Password must match with each other.',
-        ]);
+            ...$this->newPasswordRules(),
+        ], self::PASSWORD_MISMATCH_MESSAGE);
 
         if (User::where('email', $data['userEmail'])->exists()) {
             return response()->json(['message' => 'User already exists with this Email Id!'], 400);
@@ -74,11 +75,8 @@ class AuthController extends Controller
         $data = $request->validate([
             'userEmail' => ['required', 'email'],
             'userMobile' => ['required', 'digits:10'],
-            'userPassword' => ['required', Password::min(8)->mixedCase()->numbers()->symbols()],
-            'confirmPassword' => ['required', 'same:userPassword'],
-        ], [
-            'confirmPassword.same' => 'Password and Confirm Password must match with each other.',
-        ]);
+            ...$this->newPasswordRules(),
+        ], self::PASSWORD_MISMATCH_MESSAGE);
 
         $user = User::where('email', $data['userEmail'])->where('mobile', $data['userMobile'])->first();
 
@@ -113,5 +111,19 @@ class AuthController extends Controller
             'lastName' => $user->last_name,
             'userEmail' => $user->email,
         ]);
+    }
+
+    /**
+     * Shared by register and password reset: 8+ characters with upper and
+     * lower case, a number and a symbol, typed twice.
+     *
+     * @return array<string, list<mixed>>
+     */
+    private function newPasswordRules(): array
+    {
+        return [
+            'userPassword' => ['required', Password::min(8)->mixedCase()->numbers()->symbols()],
+            'confirmPassword' => ['required', 'same:userPassword'],
+        ];
     }
 }

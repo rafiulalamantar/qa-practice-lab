@@ -18,7 +18,7 @@ class CartController extends Controller
         $item->quantity = min(($item->quantity ?? 0) + 1, 10);
         $item->save();
 
-        return response()->json(['message' => 'Product Added To Cart', 'count' => $this->count($request)]);
+        return response()->json(['message' => 'Product Added To Cart', 'count' => $this->cartCount($request)]);
     }
 
     public function index(Request $request): JsonResponse
@@ -32,14 +32,9 @@ class CartController extends Controller
         ]);
     }
 
-    public function count(Request $request): int
-    {
-        return (int) $request->user()->cartItems()->sum('quantity');
-    }
-
     public function countJson(Request $request): JsonResponse
     {
-        return response()->json(['count' => $this->count($request)]);
+        return response()->json(['count' => $this->cartCount($request)]);
     }
 
     public function destroy(Request $request, Product $product): JsonResponse
@@ -50,6 +45,12 @@ class CartController extends Controller
             return response()->json(['message' => 'Product is not in your cart'], 404);
         }
 
-        return response()->json(['message' => 'Product Removed from cart', 'count' => $this->count($request)]);
+        return response()->json(['message' => 'Product Removed from cart', 'count' => $this->cartCount($request)]);
+    }
+
+    /** Total quantity of all items in the user's cart. */
+    private function cartCount(Request $request): int
+    {
+        return (int) $request->user()->cartItems()->sum('quantity');
     }
 }

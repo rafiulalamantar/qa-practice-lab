@@ -2,23 +2,27 @@
 
 namespace App\Http\Controllers\Api\Tickets;
 
-use App\Http\Controllers\Controller;
+use App\Actions\Tickets\BookTickets;
+use App\Enums\BookingStatus;
+use App\Exceptions\TicketsApiException;
+use App\Http\Requests\Tickets\StoreBookingRequest;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
-class BookingController extends Controller
+/**
+ * /api/tickets/bookings: a learner only ever sees their own bookings.
+ */
+class BookingController extends TicketsController
 {
-    use Paginates;
-
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
             'eventId' => ['nullable', 'integer'],
-            'status' => ['nullable', 'in:confirmed,cancelled'],
+            'status' => ['nullable', Rule::enum(BookingStatus::class)],
             ...$this->paginationRules(),
         ]);
         $user = $request->user();
@@ -32,121 +36,57 @@ class BookingController extends Controller
         return $this->paginated($query, $filters, fn (Booking $booking) => $booking->toApi());
     }
 
-    /**
-     * Seats are checked and the booking inserted while the event row is
-     * locked, so two parallel requests cannot oversell an event.
-     */
-    public function store(Request $request): JsonResponse
+    public function store(StoreBookingRequest $request, BookTickets $bookTickets): JsonResponse
     {
-        $max = config('practice.tickets_max_per_booking');
-        $data = $request->validate([
-            'eventId' => ['required', 'integer'],
-            'customerName' => ['required', 'string', 'min:2', 'max:100'],
-            'customerEmail' => ['required', 'email', 'max:255'],
-            'customerPhone' => ['required', 'string', 'min:10', 'max:20', 'regex:/^\+?[0-9\s\-()]+$/'],
-            'quantity' => ['required', 'integer', 'min:1', "max:{$max}"],
-        ], [
-            'customerName.min' => 'Name must be at least 2 characters',
-            'customerEmail.email' => 'A valid email is required',
-            'customerPhone.min' => 'Phone must be at least 10 characters',
-            'customerPhone.regex' => 'Phone may only contain digits, spaces, +, - and brackets',
-            'quantity.max' => "You can book at most {$max} tickets at once",
-        ]);
         $user = $request->user();
+        $booking = $bookTickets->handle($user, $request->validated());
 
-        $result = DB::transaction(function () use ($data, $user) {
-            $event = Event::visibleTo($user)->lockForUpdate()->find($data['eventId']);
-
-            if (! $event) {
-                return response()->json(['success' => false, 'error' => "Event with id {$data['eventId']} not found"], 404);
-            }
-
-            $available = $event->availableSeats();
-            if ($data['quantity'] > $available) {
-                $error = $available === 0 ? 'This event is sold out' : "Only {$available} seat(s) available";
-
-                return response()->json(['success' => false, 'error' => $error], 400);
-            }
-
-            $this->makeRoomForBooking($user);
-
-            return $user->bookings()->create([
-                'booking_ref' => Booking::newReference(),
-                'event_id' => $event->id,
-                'customer_name' => trim($data['customerName']),
-                'customer_email' => $data['customerEmail'],
-                'customer_phone' => trim($data['customerPhone']),
-                'quantity' => $data['quantity'],
-                'total_price' => round($event->price * $data['quantity'], 2),
-                'status' => 'confirmed',
-            ]);
-        });
-
-        if ($result instanceof JsonResponse) {
-            return $result;
-        }
-
-        return response()->json([
-            'success' => true,
-            'data' => $result->toApi($this->eventFor($user, $result->event_id)),
+        return $this->success([
+            'data' => $booking->toApi($this->eventWithSeats($user, $booking)),
             'message' => 'Booking confirmed!',
         ], 201);
     }
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $booking = ctype_digit($id) ? $request->user()->bookings()->find((int) $id) : null;
+        $booking = $this->findOwnBooking($request->user(), $id);
 
-        if (! $booking) {
-            return response()->json(['success' => false, 'error' => "Booking with id {$id} not found"], 404);
-        }
-
-        return response()->json(['success' => true, 'data' => $booking->toApi($this->eventFor($request->user(), $booking->event_id))]);
+        return $this->success(['data' => $booking->toApi($this->eventWithSeats($request->user(), $booking))]);
     }
 
     public function showByRef(Request $request, string $ref): JsonResponse
     {
-        $booking = $request->user()->bookings()->where('booking_ref', strtoupper($ref))->first();
+        $booking = $request->user()->bookings()->where('booking_ref', strtoupper($ref))->first()
+            ?? throw TicketsApiException::notFound("Booking with reference \"{$ref}\" not found");
 
-        if (! $booking) {
-            return response()->json(['success' => false, 'error' => "Booking with reference \"{$ref}\" not found"], 404);
-        }
-
-        return response()->json(['success' => true, 'data' => $booking->toApi($this->eventFor($request->user(), $booking->event_id))]);
+        return $this->success(['data' => $booking->toApi($this->eventWithSeats($request->user(), $booking))]);
     }
 
     /** Cancelling deletes the booking, which releases its seats. */
     public function destroy(Request $request, string $id): JsonResponse
     {
-        $booking = ctype_digit($id) ? $request->user()->bookings()->find((int) $id) : null;
+        $this->findOwnBooking($request->user(), $id)->delete();
 
-        if (! $booking) {
-            return response()->json(['success' => false, 'error' => "Booking with id {$id} not found"], 404);
-        }
-
-        $booking->delete();
-
-        return response()->json(['success' => true, 'message' => 'Booking cancelled']);
+        return $this->success(['message' => 'Booking cancelled']);
     }
 
     public function clear(Request $request): JsonResponse
     {
         $deleted = $request->user()->bookings()->delete();
 
-        return response()->json(['success' => true, 'message' => "{$deleted} booking(s) cleared", 'deleted' => $deleted]);
+        return $this->success(['message' => "{$deleted} booking(s) cleared", 'deleted' => $deleted]);
     }
 
-    private function makeRoomForBooking(User $user): void
+    private function findOwnBooking(User $user, string $id): Booking
     {
-        $excess = $user->bookings()->count() - config('practice.tickets_max_bookings') + 1;
+        $booking = ctype_digit($id) ? $user->bookings()->find((int) $id) : null;
 
-        if ($excess > 0) {
-            $user->bookings()->oldest()->oldest('id')->limit($excess)->get()->each->delete();
-        }
+        return $booking ?? throw TicketsApiException::notFound("Booking with id {$id} not found");
     }
 
-    private function eventFor(User $user, int $eventId): ?Event
+    /** The booking's event, loaded with this user's booked seat count. */
+    private function eventWithSeats(User $user, Booking $booking): ?Event
     {
-        return Event::visibleTo($user)->find($eventId);
+        return Event::visibleTo($user)->find($booking->event_id);
     }
 }

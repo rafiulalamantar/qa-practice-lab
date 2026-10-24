@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Enums\BookingStatus;
 use App\Models\Booking;
 use App\Models\Event;
 use App\Models\User;
@@ -23,7 +24,7 @@ class BookingFactory extends Factory
             'customer_phone' => '01712345678',
             'quantity' => 1,
             'total_price' => 500,
-            'status' => 'confirmed',
+            'status' => BookingStatus::Confirmed,
         ];
     }
 }

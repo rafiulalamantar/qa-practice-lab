@@ -100,6 +100,8 @@ class TicketsApiTest extends TestCase
         $this->getJson('/api/tickets/events', $other)->assertJsonPath('pagination.total', 6);
 
         $this->putJson("/api/tickets/events/{$featured->id}", $this->eventPayload(), $other)->assertForbidden();
+        // Ownership is checked before the body, so even an empty body gets 403.
+        $this->putJson("/api/tickets/events/{$featured->id}", [], $other)->assertForbidden();
         $this->deleteJson("/api/tickets/events/{$featured->id}", [], $other)->assertForbidden();
 
         $this->app['auth']->forgetGuards();

@@ -47,4 +47,19 @@ class User extends Authenticatable
     {
         return $this->hasMany(Booking::class);
     }
+
+    /**
+     * Delete this user's oldest rows of a relation so one more fits under the
+     * limit. Keeps each learner's sandbox small without refusing a request.
+     *
+     * @param  'events'|'bookings'  $relation
+     */
+    public function makeRoomFor(string $relation, int $limit): void
+    {
+        $excess = $this->{$relation}()->count() - $limit + 1;
+
+        if ($excess > 0) {
+            $this->{$relation}()->oldest()->oldest('id')->limit($excess)->get()->each->delete();
+        }
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\BookingStatus;
 use Database\Factories\BookingFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -20,7 +21,7 @@ class Booking extends Model
 
     protected function casts(): array
     {
-        return ['quantity' => 'integer', 'total_price' => 'decimal:2'];
+        return ['quantity' => 'integer', 'total_price' => 'decimal:2', 'status' => BookingStatus::class];
     }
 
     /** Reference shown to learners, e.g. TKT-7Q2M9X. */
@@ -58,7 +59,7 @@ class Booking extends Model
             'customerPhone' => $this->customer_phone,
             'quantity' => $this->quantity,
             'totalPrice' => (float) $this->total_price,
-            'status' => $this->status,
+            'status' => $this->status->value,
             'bookingRef' => $this->booking_ref,
             'createdAt' => $this->created_at?->toJSON(),
             'updatedAt' => $this->updated_at?->toJSON(),

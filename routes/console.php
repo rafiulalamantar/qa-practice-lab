@@ -1,8 +1,7 @@
 <?php
 
-use Illuminate\Foundation\Inspiring;
-use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Schedule;
 
-Artisan::command('inspire', function () {
-    $this->comment(Inspiring::quote());
-})->purpose('Display an inspiring quote');
+// On a server with `php artisan schedule:run` in cron. Vercel has no
+// scheduler, so there Vercel Cron calls /api/cron/prune instead (vercel.json).
+Schedule::command('practice:prune')->dailyAt('03:00');

@@ -1,14 +1,13 @@
 <?php
 
+use App\Exceptions\TicketsApiErrorRenderer;
+use App\Exceptions\TicketsApiException;
 use App\Http\Middleware\NormalizeAuthorizationHeader;
-use Illuminate\Auth\AuthenticationException;
 use Illuminate\Contracts\Auth\Middleware\AuthenticatesRequests;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -36,29 +35,7 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
 
-        // TicketTrail's API reports every error as {success: false, error}.
-        $exceptions->render(function (Throwable $e, Request $request) {
-            if (! $request->is('api/tickets/*')) {
-                return null;
-            }
-
-            return match (true) {
-                $e instanceof ValidationException => response()->json([
-                    'success' => false,
-                    'error' => 'Validation failed',
-                    'details' => collect($e->errors())->map(fn (array $messages, string $field) => ['field' => $field, 'message' => $messages[0]])->values(),
-                ], 400),
-                $e instanceof AuthenticationException => response()->json(['success' => false, 'error' => 'Unauthorized'], 401),
-                $e instanceof HttpExceptionInterface => response()->json([
-                    'success' => false,
-                    'error' => match ($e->getStatusCode()) {
-                        404 => 'Resource not found',
-                        405 => 'Method not allowed',
-                        429 => 'Too many requests',
-                        default => $e->getMessage() ?: 'Request failed',
-                    },
-                ], $e->getStatusCode(), $e->getHeaders()),
-                default => config('app.debug') ? null : response()->json(['success' => false, 'error' => 'Internal server error'], 500),
-            };
-        });
+        // Expected API errors (not found, sold out...) are answers, not bugs.
+        $exceptions->dontReport(TicketsApiException::class);
+        $exceptions->render((new TicketsApiErrorRenderer)(...));
     })->create();

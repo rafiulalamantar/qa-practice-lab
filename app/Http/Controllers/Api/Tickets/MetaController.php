@@ -9,6 +9,11 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
+/**
+ * Public, unauthenticated endpoints: health check, sandbox limits and the
+ * OpenAPI spec. Their response shapes are fixed by the public API, so they do
+ * not use TicketsController's {success: true} envelope.
+ */
 class MetaController extends Controller
 {
     public function health(): JsonResponse

@@ -46,35 +46,75 @@ Key decisions:
   rows, and random API latency (`X-Chaos-Mode: 1` header or `practice_chaos` cookie). A seed replays the same run, so a
   learner can reproduce a flaky failure.
 
+## Code map for new developers
+
+Start with `routes/web.php` (pages) and `routes/api.php` (API). Every route leads to one of the folders below.
+
+```
+app/
+├── Actions/Tickets/BookTickets.php   Business rules for booking seats (locking, sold out, sandbox cap)
+├── Console/Commands/                 practice:prune, the daily clean-up (scheduled in routes/console.php)
+├── Enums/BookingStatus.php           Allowed booking statuses
+├── Exceptions/
+│   ├── TicketsApiException.php       Throw this for an expected TicketTrail error (404, 403, sold out...)
+│   └── TicketsApiErrorRenderer.php   Turns any error on /api/tickets/* into {success:false, error}
+├── Http/
+│   ├── Controllers/Api/Ecom/         ShopSphere API  (/api/ecom/*)
+│   ├── Controllers/Api/Tickets/      TicketTrail API (/api/tickets/*); all extend TicketsController
+│   ├── Controllers/Api/CronController.php   Vercel Cron + post-deploy migrate hook
+│   ├── Middleware/                   Bare-token Authorization header, challenge-mode latency
+│   └── Requests/Tickets/             Validation rules for the bigger TicketTrail request bodies
+├── Models/                           Eloquent models; each has toApi() = its exact public JSON shape
+└── Support/
+    ├── AccountPurger.php             Deletes expired learner accounts and all of their data
+    ├── VersionedAsset.php            Cache-busting ?v= URLs for CSS, JS and images
+    ├── TicketsOpenApi.php            Swagger spec served at /api/tickets/openapi.json
+    └── PracticeData.php, Countries.php   Fixed data for the stateless modules
+resources/views/<module>/            Blade page shells (one folder per module)
+public/assets/js/<module>.js         Each module's front end: calls the API and renders the page
+config/practice.php                  Every practice-specific setting (demo login, limits, retention)
+tests/Feature/                       One test file per module; read these to learn the expected behaviour
+```
+
+### Conventions
+
+- **The public API is a contract.** Learners' test suites depend on every URL, field name, status code and error
+  message. Never rename or reshape them; add new fields instead. Each model's `toApi()` is the single place a
+  JSON shape is defined.
+- **Every element learners automate has an `id` and a `data-testid`.** Keep both when changing a page.
+- **Controllers stay thin.** They validate input, call a model or Action, and return JSON. Rules with real logic
+  (locking, money, limits) go in `app/Actions`.
+- **TicketTrail errors are thrown, not returned:** `throw TicketsApiException::notFound('Event with id 5 not found')`.
+  ShopSphere keeps its own error format, `{message}`, because it copies a different public API.
+- **Never change the demo login** (`config/practice.php`, the demo user in `DatabaseSeeder`, the `is_demo` checks).
+  It is printed on the login pages.
+- **Test every behaviour change** in `tests/Feature`, then run `php artisan test --compact` and `vendor/bin/pint --dirty`.
+
 ## Local development
 
 Uses the existing MySQL server on port 3306, with its own database and a dedicated user that can only access this
-project's databases:
+project's database:
 
 ```bash
 composer install
 cp .env.example .env && php artisan key:generate
 mysql -u root -p <<'SQL'
-CREATE DATABASE qa_practice_lab      CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE qa_practice_lab_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE qa_practice_lab CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER 'qa_lab'@'localhost' IDENTIFIED BY '<password>';
 CREATE USER 'qa_lab'@'127.0.0.1' IDENTIFIED BY '<password>';
-GRANT ALL PRIVILEGES ON qa_practice_lab.*      TO 'qa_lab'@'localhost', 'qa_lab'@'127.0.0.1';
-GRANT ALL PRIVILEGES ON qa_practice_lab_test.* TO 'qa_lab'@'localhost', 'qa_lab'@'127.0.0.1';
+GRANT ALL PRIVILEGES ON qa_practice_lab.* TO 'qa_lab'@'localhost', 'qa_lab'@'127.0.0.1';
 SQL
 # put <password> in DB_PASSWORD in .env, then:
 php artisan migrate --seed
 php artisan serve
 ```
 
-Tests:
+Tests run on an in-memory SQLite database, so they need no MySQL setup and never touch your dev data:
 
 ```bash
-php artisan test                                   # fast, in-memory SQLite
-DB_CONNECTION=mysql DB_DATABASE=qa_practice_lab_test php artisan test   # same suite on MySQL
+php artisan test --compact
+vendor/bin/pint --dirty    # format PHP before committing
 ```
-
-The MySQL run wipes and rebuilds `qa_practice_lab_test` only, never the dev database.
 
 ## Deploying to Vercel
 

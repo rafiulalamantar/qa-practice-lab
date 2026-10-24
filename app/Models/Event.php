@@ -48,6 +48,17 @@ class Event extends Model
             ->withSum(['bookings as booked_seats' => fn (Builder $q) => $q->where('user_id', $user->id)], 'quantity');
     }
 
+    /** Case-insensitive match on title, description or venue. */
+    public function scopeSearch(Builder $query, string $term): Builder
+    {
+        $like = '%'.mb_strtolower(trim($term)).'%';
+
+        return $query->where(fn (Builder $q) => $q
+            ->whereRaw('LOWER(title) LIKE ?', [$like])
+            ->orWhereRaw('LOWER(description) LIKE ?', [$like])
+            ->orWhereRaw('LOWER(venue) LIKE ?', [$like]));
+    }
+
     public function isFeatured(): bool
     {
         return $this->user_id === null;

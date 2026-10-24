@@ -2,18 +2,22 @@
 
 namespace App\Http\Controllers\Api\Tickets;
 
-use App\Http\Controllers\Controller;
+use App\Exceptions\TicketsApiException;
+use App\Http\Requests\Tickets\SaveEventRequest;
 use App\Models\Event;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
-class EventController extends Controller
+/**
+ * /api/tickets/events: the shared featured events plus the learner's own
+ * custom events. Featured events (user_id = null) are read-only.
+ */
+class EventController extends TicketsController
 {
-    use Paginates;
-
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
@@ -26,12 +30,7 @@ class EventController extends Controller
         $query = Event::visibleTo($request->user())
             ->when($filters['category'] ?? null, fn ($q, $category) => $q->where('category', $category))
             ->when($filters['city'] ?? null, fn ($q, $city) => $q->whereRaw('LOWER(city) = ?', [mb_strtolower(trim($city))]))
-            ->when($filters['search'] ?? null, function ($q, $term) {
-                $like = '%'.mb_strtolower(trim($term)).'%';
-                $q->where(fn ($q) => $q->whereRaw('LOWER(title) LIKE ?', [$like])
-                    ->orWhereRaw('LOWER(description) LIKE ?', [$like])
-                    ->orWhereRaw('LOWER(venue) LIKE ?', [$like]));
-            })
+            ->when($filters['search'] ?? null, fn ($q, $term) => $q->search($term))
             ->orderBy('event_date')->orderBy('id');
 
         return $this->paginated($query, $filters, fn (Event $event) => $event->toApi());
@@ -39,30 +38,20 @@ class EventController extends Controller
 
     public function show(Request $request, string $id): JsonResponse
     {
-        $event = $this->findVisible($request, $id);
-
-        return $event
-            ? response()->json(['success' => true, 'data' => $event->toApi()])
-            : $this->notFound($id);
+        return $this->success(['data' => $this->findVisibleEvent($request->user(), $id)->toApi()]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(SaveEventRequest $request): JsonResponse
     {
-        $data = $this->validateEvent($request);
         $user = $request->user();
 
-        $event = DB::transaction(function () use ($data, $user) {
-            // Keep each sandbox small: the oldest custom event makes room.
-            $excess = $user->events()->count() - config('practice.tickets_max_events') + 1;
-            if ($excess > 0) {
-                $user->events()->oldest()->oldest('id')->limit($excess)->get()->each->delete();
-            }
+        $event = DB::transaction(function () use ($request, $user) {
+            $user->makeRoomFor('events', config('practice.tickets_max_events'));
 
-            return $user->events()->create($this->attributes($data));
+            return $user->events()->create($request->eventAttributes());
         });
 
-        return response()->json([
-            'success' => true,
+        return $this->success([
             'data' => Event::visibleTo($user)->find($event->id)->toApi(),
             'message' => 'Event created successfully',
         ], 201);
@@ -70,93 +59,48 @@ class EventController extends Controller
 
     public function update(Request $request, string $id): JsonResponse
     {
-        $event = $this->findVisible($request, $id);
+        $event = $this->findEditableEvent($request->user(), $id);
 
-        if (! $event) {
-            return $this->notFound($id);
-        }
+        // Resolved here rather than in the method signature so that a missing
+        // or read-only event answers 404/403 before the body is validated.
+        $input = app(SaveEventRequest::class);
 
-        if ($event->isFeatured()) {
-            return response()->json(['success' => false, 'error' => 'Featured events are read-only'], 403);
-        }
-
-        $data = $this->validateEvent($request);
-
-        if ($data['totalSeats'] < (int) $event->booked_seats) {
+        if ($input->validated('totalSeats') < (int) $event->booked_seats) {
             throw ValidationException::withMessages([
                 'totalSeats' => "totalSeats cannot be less than the {$event->booked_seats} seat(s) already booked",
             ]);
         }
 
-        $event->update($this->attributes($data));
+        $event->update($input->eventAttributes());
 
-        return response()->json([
-            'success' => true,
-            'data' => $event->refresh()->loadSum(['bookings as booked_seats' => fn ($q) => $q->where('user_id', $request->user()->id)], 'quantity')->toApi(),
+        return $this->success([
+            'data' => Event::visibleTo($request->user())->find($event->id)->toApi(),
             'message' => 'Event updated successfully',
         ]);
     }
 
     public function destroy(Request $request, string $id): JsonResponse
     {
-        $event = $this->findVisible($request, $id);
+        $this->findEditableEvent($request->user(), $id)->delete();
 
-        if (! $event) {
-            return $this->notFound($id);
-        }
+        return $this->success(['message' => 'Event deleted successfully']);
+    }
+
+    private function findVisibleEvent(User $user, string $id): Event
+    {
+        $event = ctype_digit($id) ? Event::visibleTo($user)->find((int) $id) : null;
+
+        return $event ?? throw TicketsApiException::notFound("Event with id {$id} not found");
+    }
+
+    private function findEditableEvent(User $user, string $id): Event
+    {
+        $event = $this->findVisibleEvent($user, $id);
 
         if ($event->isFeatured()) {
-            return response()->json(['success' => false, 'error' => 'Featured events are read-only'], 403);
+            throw TicketsApiException::forbidden('Featured events are read-only');
         }
 
-        $event->delete();
-
-        return response()->json(['success' => true, 'message' => 'Event deleted successfully']);
-    }
-
-    private function findVisible(Request $request, string $id): ?Event
-    {
-        return ctype_digit($id) ? Event::visibleTo($request->user())->find((int) $id) : null;
-    }
-
-    private function notFound(string $id): JsonResponse
-    {
-        return response()->json(['success' => false, 'error' => "Event with id {$id} not found"], 404);
-    }
-
-    /**
-     * @return array{title: string, description: ?string, category: string, venue: string, city: string, eventDate: string, price: float|int, totalSeats: int, imageUrl: ?string}
-     */
-    private function validateEvent(Request $request): array
-    {
-        return $request->validate([
-            'title' => ['required', 'string', 'min:3', 'max:120'],
-            'description' => ['nullable', 'string', 'max:1000'],
-            'category' => ['required', Rule::in(Event::CATEGORIES)],
-            'venue' => ['required', 'string', 'max:160'],
-            'city' => ['required', 'string', 'max:80'],
-            'eventDate' => ['required', 'date', 'after:now'],
-            'price' => ['required', 'numeric', 'min:0', 'max:1000000'],
-            'totalSeats' => ['required', 'integer', 'min:1', 'max:100000'],
-            'imageUrl' => ['nullable', 'url:http,https', 'max:500'],
-        ], [
-            'category.in' => 'Category must be one of: '.implode(', ', Event::CATEGORIES),
-            'eventDate.after' => 'Event date must be in the future',
-        ]);
-    }
-
-    private function attributes(array $data): array
-    {
-        return [
-            'title' => trim($data['title']),
-            'description' => $data['description'] ?? null,
-            'category' => $data['category'],
-            'venue' => trim($data['venue']),
-            'city' => trim($data['city']),
-            'event_date' => now()->parse($data['eventDate'])->utc(),
-            'price' => $data['price'],
-            'total_seats' => $data['totalSeats'],
-            'image_url' => $data['imageUrl'] ?? null,
-        ];
+        return $event;
     }
 }
