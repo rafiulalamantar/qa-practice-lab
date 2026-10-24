@@ -41,5 +41,5 @@
         demo: { email: @json(config('practice.demo_email')), password: @json(config('practice.demo_password')) }
     };
 </script>
-<script src="{{ asset('assets/js/client.js') }}"></script>
+<script src="{{ \App\Support\VersionedAsset::url('assets/js/client.js') }}"></script>
 @endpush

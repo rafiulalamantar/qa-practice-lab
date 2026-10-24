@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Support\VersionedAsset;
 use Database\Factories\EventFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
@@ -72,7 +73,7 @@ class Event extends Model
             'price' => (float) $this->price,
             'totalSeats' => $this->total_seats,
             'availableSeats' => $this->availableSeats(),
-            'imageUrl' => $image && ! str_starts_with($image, 'http') ? asset($image) : $image,
+            'imageUrl' => $image && ! str_starts_with($image, 'http') ? VersionedAsset::url($image) : $image,
             'isStatic' => $this->isFeatured(),
             'createdAt' => $this->created_at?->toJSON(),
             'updatedAt' => $this->updated_at?->toJSON(),

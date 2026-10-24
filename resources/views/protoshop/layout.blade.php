@@ -30,5 +30,5 @@
 
 @push('scripts')
 <script>window.PROTOSHOP_PRODUCTS = @json($products);</script>
-<script src="{{ asset('assets/js/protoshop.js') }}"></script>
+<script src="{{ \App\Support\VersionedAsset::url('assets/js/protoshop.js') }}"></script>
 @endpush

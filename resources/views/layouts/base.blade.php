@@ -8,8 +8,9 @@
     <link rel="icon" href="{{ asset('favicon.svg') }}" type="image/svg+xml">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
     @stack('head')
-    <link rel="stylesheet" href="{{ asset('assets/css/app.css') }}">
-    <script src="{{ asset('assets/js/chaos.js') }}"></script>
+    <link rel="stylesheet" href="{{ \App\Support\VersionedAsset::url('assets/css/app.css') }}">
+    @stack('styles')
+    <script src="{{ \App\Support\VersionedAsset::url('assets/js/chaos.js') }}"></script>
 </head>
 <body class="@yield('body-class')">
     <div id="chaos-banner" class="chaos-banner" hidden>

@@ -4,7 +4,7 @@
 (function () {
     var TT = window.TT;
     var FLASH_KEY = 'tt.flash';
-    var CATEGORY_STYLE = { Conference: 'primary', Concert: 'danger', Sports: 'success', Workshop: 'info', Festival: 'warning' };
+    var CATEGORY_ICON = { Conference: 'bi-mic', Concert: 'bi-music-note-beamed', Sports: 'bi-trophy', Workshop: 'bi-tools', Festival: 'bi-stars' };
 
     // ---------- helpers ----------
 
@@ -16,6 +16,17 @@
     function money(n) {
         n = Number(n);
         return n === 0 ? 'Free' : '\u09F3' + n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+    }
+
+    function icon(name, extra) { return el('i', { 'class': 'bi ' + name + (extra ? ' ' + extra : ''), 'aria-hidden': 'true' }); }
+
+    function dateParts(iso) {
+        var d = new Date(iso);
+        return {
+            day: d.toLocaleString('en-US', { day: 'numeric' }),
+            month: d.toLocaleString('en-US', { month: 'short' }),
+            time: d.toLocaleString('en-US', { hour: 'numeric', minute: '2-digit' })
+        };
     }
 
     function formatDate(iso, withTime) {
@@ -58,7 +69,9 @@
     };
 
     function toast(message, type) {
-        var box = el('div', { 'class': 'toast-item toast-' + (type || 'success'), role: 'alert', 'data-testid': 'toast' });
+        type = type || 'success';
+        var box = el('div', { 'class': 'toast-item toast-' + type, role: 'alert', 'data-testid': 'toast' });
+        box.appendChild(icon({ success: 'bi-check-circle-fill', error: 'bi-exclamation-circle-fill', info: 'bi-info-circle-fill' }[type]));
         box.appendChild(el('div', { 'class': 'toast-message' }, message));
         box.addEventListener('click', function () { box.remove(); });
         $('#toast-container').appendChild(box);
@@ -184,44 +197,59 @@
     function imageFor(event) { return event.imageUrl || TT.images[event.category]; }
 
     function seatsText(available) {
-        if (available === 0) return { text: 'SOLD OUT', cls: 'text-danger' };
-        if (available <= 10) return { text: available + ' seat' + (available > 1 ? 's' : '') + ' left!', cls: 'text-warning-emphasis' };
-        return { text: available.toLocaleString('en-US') + ' seats available', cls: 'text-success' };
+        if (available === 0) return { text: 'SOLD OUT', cls: 'is-out' };
+        if (available <= 10) return { text: available + ' seat' + (available > 1 ? 's' : '') + ' left!', cls: 'is-low' };
+        return { text: available.toLocaleString('en-US') + ' seats available', cls: 'is-ok' };
+    }
+
+    function seatBar(e, small) {
+        var state = seatsText(e.availableSeats).cls;
+        var bar = el('div', { 'class': (small ? 'tt-mini-bar ' : 'tt-seatbar ') + state, 'aria-hidden': 'true' });
+        var pct = e.totalSeats ? Math.max(e.availableSeats ? 4 : 100, Math.round(e.availableSeats / e.totalSeats * 100)) : 0;
+        bar.appendChild(el('span', { style: 'width:' + pct + '%' }));
+        return bar;
     }
 
     function categoryBadge(category) {
-        return el('span', { 'class': 'badge rounded-pill text-bg-' + (CATEGORY_STYLE[category] || 'secondary') }, category);
+        var badge = el('span', { 'class': 'tt-cat-badge tt-cat tt-cat-' + category });
+        append(badge, icon(CATEGORY_ICON[category] || 'bi-tag'), document.createTextNode(category));
+        return badge;
     }
 
     function eventCard(e) {
         var soldOut = e.availableSeats === 0;
+        var url = TT.base + '/events/' + e.id;
         var col = el('div', { 'class': 'col-sm-6 col-lg-4' });
         var card = el('article', { 'class': 'tt-event-card h-100' + (soldOut ? ' is-sold-out' : ''), 'data-testid': 'event-card', 'data-event-id': e.id });
 
-        var media = el('div', { 'class': 'tt-event-media' });
+        var media = el('a', { 'class': 'tt-media', href: url, tabindex: '-1', 'aria-hidden': 'true' });
         var img = el('img', { src: imageFor(e), alt: '', loading: 'lazy' });
         img.addEventListener('error', function () { img.src = TT.images[e.category]; }, { once: true });
-        var badges = append(el('div', { 'class': 'tt-badges' }), categoryBadge(e.category));
-        if (e.isStatic) badges.appendChild(el('span', { 'class': 'badge rounded-pill bg-success', 'data-testid': 'featured-badge' }, 'Featured'));
-        append(media, img, badges);
+        var top = el('div', { 'class': 'tt-media-top' });
+        top.appendChild(categoryBadge(e.category));
+        if (e.isStatic) {
+            var featured = append(el('span', { 'class': 'tt-chip tt-chip-featured', 'data-testid': 'featured-badge' }), icon('bi-star-fill'), document.createTextNode('Featured'));
+            top.appendChild(featured);
+        }
+        var parts = dateParts(e.eventDate);
+        var stub = append(el('div', { 'class': 'tt-date-stub' }), el('b', {}, parts.day), el('small', {}, parts.month));
+        append(media, img, top, stub);
         if (soldOut) media.appendChild(append(el('div', { 'class': 'tt-sold-out' }), el('span', {}, 'SOLD OUT')));
 
-        var body = el('div', { 'class': 'p-3 d-flex flex-column flex-grow-1' });
-        var title = el('h3', { 'class': 'h6 mb-2' });
-        title.appendChild(el('a', { href: TT.base + '/events/' + e.id, 'class': 'text-reset text-decoration-none', 'data-testid': 'event-title' }, e.title));
+        var body = el('div', { 'class': 'tt-event-body' });
+        var title = el('h3');
+        title.appendChild(el('a', { href: url, 'data-testid': 'event-title' }, e.title));
+        var when = append(el('div', { 'class': 'tt-meta-line' }), icon('bi-calendar-event'), el('span', {}, formatDate(e.eventDate)));
+        var where = append(el('div', { 'class': 'tt-meta-line' }), icon('bi-geo-alt'), el('span', {}, e.venue + ', ' + e.city));
         var seats = seatsText(e.availableSeats);
-        append(body,
-            title,
-            el('div', { 'class': 'small text-secondary' }, '📅 ' + formatDate(e.eventDate)),
-            el('div', { 'class': 'small text-secondary mb-3' }, '📍 ' + e.venue + ', ' + e.city)
-        );
-        var footer = el('div', { 'class': 'mt-auto d-flex justify-content-between align-items-end' });
-        var price = append(el('div'),
-            el('div', { 'class': 'fw-bold text-tt', 'data-testid': 'event-price' }, money(e.price)),
-            el('div', { 'class': 'small fw-semibold ' + seats.cls, 'data-testid': 'event-seats' }, seats.text));
-        var book = el('a', { 'class': 'btn btn-sm btn-tt' + (soldOut ? ' disabled' : ''), href: TT.base + '/events/' + e.id, 'data-testid': 'book-now-btn', 'aria-disabled': soldOut ? 'true' : 'false' }, soldOut ? 'Sold Out' : 'Book Now');
-        append(footer, price, book);
-        body.appendChild(footer);
+        append(body, title, when, where, seatBar(e),
+            el('div', { 'class': 'tt-seats ' + seats.cls, 'data-testid': 'event-seats' }, seats.text));
+
+        var foot = el('div', { 'class': 'tt-event-foot' });
+        var price = append(el('div'), el('div', { 'class': 'tt-price-label' }, 'Price'), el('div', { 'class': 'tt-price', 'data-testid': 'event-price' }, money(e.price)));
+        var book = el('a', { 'class': 'btn btn-tt' + (soldOut ? ' disabled' : ''), href: url, 'data-testid': 'book-now-btn', 'aria-disabled': soldOut ? 'true' : 'false' }, soldOut ? 'Sold Out' : 'Book Now');
+        append(foot, price, book);
+        body.appendChild(foot);
         append(card, media, body);
         col.appendChild(card);
         return col;
@@ -239,6 +267,8 @@
     function initNav() {
         var email = $('#user-email-display');
         if (email) email.textContent = session.user.email || '';
+        var avatar = $('#user-avatar');
+        if (avatar) avatar.textContent = (session.user.email || '?').charAt(0);
         var active = { home: 'home', events: 'events', 'event-details': 'events', bookings: 'bookings', 'booking-details': 'bookings', 'admin-events': 'admin', 'admin-bookings': 'admin' }[TT.page];
         $all('[data-nav]').forEach(function (a) {
             if (a.getAttribute('data-nav') === active) { a.classList.add('active'); a.setAttribute('aria-current', 'page'); }
@@ -341,7 +371,22 @@
             grid.innerHTML = '';
             grid.removeAttribute('aria-busy');
             if (!r.ok) return toast(errorText(r.data), 'error');
-            r.data.data.filter(function (e) { return e.isStatic; }).slice(0, 3).forEach(function (e) { grid.appendChild(eventCard(e)); });
+            var events = r.data.data;
+            events.filter(function (e) { return e.isStatic; }).slice(0, 3).forEach(function (e) { grid.appendChild(eventCard(e)); });
+
+            var cities = {};
+            var seats = 0;
+            events.forEach(function (e) { cities[e.city.toLowerCase()] = true; seats += e.availableSeats; });
+            $('#stat-events').textContent = r.data.pagination.total;
+            $('#stat-cities').textContent = Object.keys(cities).length;
+            $('#stat-seats').textContent = seats.toLocaleString('en-US');
+            $all('[data-category]').forEach(function (tile) {
+                var n = events.filter(function (e) { return e.category === tile.getAttribute('data-category'); }).length;
+                $('[data-category-count]', tile).textContent = n + ' event' + (n === 1 ? '' : 's');
+            });
+        });
+        api('GET', '/bookings?limit=1').then(function (r) {
+            if (r.ok) $('#stat-bookings').textContent = r.data.pagination.total;
         });
     };
 
@@ -377,8 +422,24 @@
             });
         }
 
-        form.addEventListener('input', function () { clearTimeout(timer); timer = setTimeout(function () { load(1); }, 400); });
-        form.addEventListener('reset', function () { setTimeout(function () { load(1); }, 0); });
+        function syncChips() {
+            $all('[data-chip]').forEach(function (chip) {
+                var on = chip.getAttribute('data-chip') === form.elements.category.value;
+                chip.classList.toggle('is-active', on);
+                chip.setAttribute('aria-pressed', on ? 'true' : 'false');
+            });
+        }
+        $all('[data-chip]').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                form.elements.category.value = chip.getAttribute('data-chip');
+                syncChips();
+                load(1);
+            });
+        });
+        syncChips();
+
+        form.addEventListener('input', function () { syncChips(); clearTimeout(timer); timer = setTimeout(function () { load(1); }, 400); });
+        form.addEventListener('reset', function () { setTimeout(function () { syncChips(); load(1); }, 0); });
         form.addEventListener('submit', function (e) { e.preventDefault(); load(1); });
         $('#events-error [data-retry]').addEventListener('click', function () { load(1); });
         load(parseInt(params.get('page'), 10) || 1);
@@ -395,7 +456,12 @@
         function renderSeats() {
             var seats = seatsText(event.availableSeats);
             $('#event-seats').textContent = seats.text;
-            $('#event-seats').className = 'fw-semibold ' + seats.cls;
+            $('#event-seats').className = 'tt-seats ' + seats.cls;
+            var bar = seatBar(event);
+            bar.id = 'event-seatbar';
+            bar.classList.add('mt-4');
+            $('#event-seatbar').replaceWith(bar);
+            $('#event-capacity').textContent = event.availableSeats.toLocaleString('en-US') + ' of ' + event.totalSeats.toLocaleString('en-US') + ' seats left';
             var soldOut = event.availableSeats === 0;
             $('#sold-out-msg').hidden = !soldOut;
             form.hidden = soldOut;
@@ -419,8 +485,10 @@
             $('#crumb-title').textContent = event.title;
             $('#event-image').src = imageFor(event);
             $('#event-image').addEventListener('error', function () { $('#event-image').src = TT.images[event.category]; }, { once: true });
-            $('#event-category').textContent = event.category;
-            $('#event-category').className = 'badge rounded-pill text-bg-' + (CATEGORY_STYLE[event.category] || 'secondary');
+            $('#event-category').replaceWith(Object.assign(categoryBadge(event.category), { id: 'event-category' }));
+            $('#event-category').setAttribute('data-testid', 'event-category');
+            $('#tile-time').textContent = dateParts(event.eventDate).time;
+            $('#tile-city').textContent = event.city;
             $('#event-featured').hidden = !event.isStatic;
             $('#event-title').textContent = event.title;
             $('#event-date').textContent = formatDate(event.eventDate);
@@ -485,26 +553,34 @@
 
         function card(b) {
             var e = b.event || {};
-            var box = el('article', { 'class': 'tt-booking-card p-3 p-md-4', 'data-testid': 'booking-card', 'data-booking-id': b.id });
-            var top = el('div', { 'class': 'd-flex flex-wrap justify-content-between gap-2' });
-            var left = el('div');
-            append(left,
-                el('span', { 'class': 'tt-ref', 'data-testid': 'booking-ref' }, b.bookingRef),
-                el('h2', { 'class': 'h5 mt-2 mb-1', 'data-testid': 'booking-event-title' }, e.title || 'Event removed'));
-            var meta = el('div', { 'class': 'small text-secondary d-flex flex-wrap gap-3' });
-            append(meta,
-                e.eventDate ? el('span', {}, '📅 ' + formatDate(e.eventDate)) : null,
-                el('span', { 'data-testid': 'booking-quantity' }, '🎫 ' + b.quantity + ' ticket' + (b.quantity > 1 ? 's' : '')),
-                e.city ? el('span', {}, '📍 ' + e.city) : null);
-            left.appendChild(meta);
-            var right = el('div', { 'class': 'text-md-end' });
-            append(right,
-                el('div', { 'class': 'fs-5 fw-bold text-tt', 'data-testid': 'booking-total' }, money(b.totalPrice)),
-                el('span', { 'class': 'badge text-bg-success text-capitalize', 'data-testid': 'booking-status' }, b.status));
-            append(top, left, right);
+            var box = el('article', { 'class': 'tt-ticket tt-cat tt-cat-' + (e.category || 'none'), 'data-testid': 'booking-card', 'data-booking-id': b.id });
+            var stub = el('div', { 'class': 'tt-ticket-stub' });
+            if (e.eventDate) {
+                var parts = dateParts(e.eventDate);
+                append(stub, icon(CATEGORY_ICON[e.category] || 'bi-ticket-perforated'), el('b', {}, parts.day), el('small', {}, parts.month));
+            } else {
+                stub.appendChild(icon('bi-ticket-perforated'));
+            }
 
-            var actions = el('div', { 'class': 'd-flex gap-2 mt-3' });
-            var view = el('a', { 'class': 'btn btn-sm btn-outline-secondary', href: TT.base + '/bookings/' + b.id, 'data-testid': 'view-booking-btn' }, 'View Details');
+            var main = el('div', { 'class': 'tt-ticket-main' });
+            var meta = el('div', { 'class': 'tt-ticket-meta' });
+            append(meta,
+                e.eventDate ? append(el('span'), icon('bi-clock'), document.createTextNode(formatDate(e.eventDate))) : null,
+                append(el('span', { 'data-testid': 'booking-quantity' }), icon('bi-ticket-perforated'), document.createTextNode(b.quantity + ' ticket' + (b.quantity > 1 ? 's' : ''))),
+                e.city ? append(el('span'), icon('bi-geo-alt'), document.createTextNode(e.city)) : null);
+            append(main,
+                el('span', { 'class': 'tt-ref', 'data-testid': 'booking-ref' }, b.bookingRef),
+                el('h2', { 'data-testid': 'booking-event-title' }, e.title || 'Event removed'),
+                meta);
+
+            var side = el('div', { 'class': 'tt-ticket-side' });
+            append(side,
+                append(el('div', { 'class': 'text-md-end' }),
+                    el('div', { 'class': 'tt-ticket-total', 'data-testid': 'booking-total' }, money(b.totalPrice)),
+                    el('span', { 'class': 'tt-status', 'data-testid': 'booking-status' }, b.status)));
+
+            var actions = el('div', { 'class': 'd-flex gap-2' });
+            var view = el('a', { 'class': 'btn btn-sm btn-tt-ghost', href: TT.base + '/bookings/' + b.id, 'data-testid': 'view-booking-btn' }, 'View Details');
             var cancel = el('button', { 'class': 'btn btn-sm btn-outline-danger', type: 'button', 'data-testid': 'cancel-booking-btn' }, 'Cancel Booking');
             cancel.addEventListener('click', function () {
                 confirmAction({
@@ -520,7 +596,8 @@
                 });
             });
             append(actions, view, cancel);
-            return append(box, top, actions);
+            side.appendChild(actions);
+            return append(box, stub, main, side);
         }
 
         function load(page) {
@@ -591,12 +668,14 @@
                 setTimeout(function () {
                     var eligible = b.quantity === 1;
                     var result = $('#refund-result');
-                    result.className = 'alert small mb-0 ' + (eligible ? 'alert-success' : 'alert-danger');
+                    result.className = 'tt-refund-result ' + (eligible ? 'is-eligible' : 'is-ineligible');
                     result.setAttribute('data-eligible', eligible ? 'true' : 'false');
                     result.innerHTML = '';
                     append(result,
-                        el('strong', {}, eligible ? 'Eligible for refund.' : 'Not eligible for refund.'),
-                        document.createTextNode(eligible ? ' Single-ticket bookings qualify for a full refund.' : ' Group bookings (' + b.quantity + ' tickets) are non-refundable.'));
+                        icon(eligible ? 'bi-check-circle-fill' : 'bi-x-circle-fill'),
+                        append(el('span'),
+                            el('strong', {}, eligible ? 'Eligible for refund.' : 'Not eligible for refund.'),
+                            document.createTextNode(eligible ? ' Single-ticket bookings qualify for a full refund.' : ' Group bookings (' + b.quantity + ' tickets) are non-refundable.')));
                     $('#refund-spinner').hidden = true;
                     result.hidden = false;
                 }, delay);
@@ -632,6 +711,7 @@
             form.reset();
             clearErrors(form);
             $('#event-form-title').textContent = 'Add New Event';
+            form.classList.remove('is-editing');
             $('#add-event-btn').textContent = 'Add Event';
             $('#cancel-edit-btn').hidden = true;
         }
@@ -644,6 +724,7 @@
             });
             form.elements.eventDate.value = toLocalInput(e.eventDate);
             $('#event-form-title').textContent = 'Edit Event';
+            form.classList.add('is-editing');
             $('#add-event-btn').textContent = 'Update Event';
             $('#cancel-edit-btn').hidden = false;
             form.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -652,16 +733,26 @@
 
         function row(e) {
             var tr = el('tr', { 'data-testid': 'event-table-row', 'data-event-id': e.id });
-            var title = el('td', { 'class': 'fw-semibold' });
-            title.appendChild(el('a', { href: TT.base + '/events/' + e.id, 'class': 'text-reset' }, e.title));
-            if (e.isStatic) title.appendChild(el('span', { 'class': 'badge bg-success-subtle text-success-emphasis ms-2' }, 'Featured'));
-            var seats = el('td', { 'class': 'fw-semibold ' + (e.availableSeats === 0 ? 'text-danger' : e.availableSeats <= 10 ? 'text-warning-emphasis' : 'text-success') }, e.availableSeats + '/' + e.totalSeats);
-            var actions = el('td', { 'class': 'text-nowrap' });
+            var thumb = el('img', { 'class': 'tt-thumb', src: imageFor(e), alt: '' });
+            thumb.addEventListener('error', function () { thumb.src = TT.images[e.category]; }, { once: true });
+            var info = el('div', { 'style': 'min-width:0' });
+            var name = el('div', { 'class': 'd-flex align-items-center gap-2 flex-wrap' });
+            name.appendChild(el('a', { href: TT.base + '/events/' + e.id, 'class': 'tt-row-title' }, e.title));
+            var tags = el('div', { 'class': 'd-flex align-items-center gap-1 flex-wrap mt-1' });
+            tags.appendChild(categoryBadge(e.category));
+            if (e.isStatic) tags.appendChild(append(el('span', { 'class': 'tt-chip tt-chip-featured' }), icon('bi-star-fill'), document.createTextNode('Featured')));
+            append(info, name, el('div', { 'class': 'tt-row-sub text-truncate', style: 'max-width:260px' }, e.venue + ' · ' + e.city), tags);
+            var title = append(el('td'), append(el('div', { 'class': 'd-flex align-items-center gap-3' }), thumb, info));
+            var seatState = seatsText(e.availableSeats).cls;
+            var seats = append(el('td'),
+                el('div', { 'class': 'tt-seats ' + seatState }, e.availableSeats + '/' + e.totalSeats),
+                seatBar(e, true));
+            var actions = el('td', { 'class': 'text-nowrap text-end' });
             if (e.isStatic) {
-                actions.appendChild(el('span', { 'class': 'small text-secondary fst-italic' }, 'Read-only'));
+                actions.appendChild(append(el('span', { 'class': 'tt-readonly' }), icon('bi-lock'), document.createTextNode('Read-only')));
             } else {
-                var edit = el('button', { 'class': 'btn btn-sm btn-outline-primary me-1', type: 'button', 'data-testid': 'edit-event-btn' }, 'Edit');
-                var del = el('button', { 'class': 'btn btn-sm btn-outline-danger', type: 'button', 'data-testid': 'delete-event-btn' }, 'Delete');
+                var edit = append(el('button', { 'class': 'btn btn-sm btn-tt-ghost me-1', type: 'button', 'data-testid': 'edit-event-btn' }), icon('bi-pencil', 'me-1'), document.createTextNode('Edit'));
+                var del = append(el('button', { 'class': 'btn btn-sm btn-outline-danger', type: 'button', 'data-testid': 'delete-event-btn' }), icon('bi-trash3', 'me-1'), document.createTextNode('Delete'));
                 edit.addEventListener('click', function () { startEdit(e); });
                 del.addEventListener('click', function () {
                     confirmAction({
@@ -681,10 +772,8 @@
             }
             return append(tr,
                 title,
-                append(el('td'), categoryBadge(e.category)),
-                el('td', { 'class': 'small text-nowrap' }, formatDate(e.eventDate, false)),
-                el('td', {}, e.city),
-                el('td', {}, money(e.price)),
+                el('td', { 'class': 'small text-nowrap' }, new Date(e.eventDate).toLocaleString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })),
+                el('td', { 'class': 'fw-bold text-dark text-nowrap' }, money(e.price)),
                 seats,
                 actions);
         }
@@ -700,6 +789,14 @@
                 $('#admin-events-count').textContent = p.total + ' events';
                 $('#admin-events-empty').hidden = p.total > 0;
                 updatePager(p);
+            });
+            api('GET', '/events?limit=100').then(function (r) {
+                if (!r.ok) return;
+                var all = r.data.data;
+                $('#kpi-total').textContent = r.data.pagination.total;
+                $('#kpi-featured').textContent = all.filter(function (e) { return e.isStatic; }).length;
+                $('#kpi-custom').textContent = all.filter(function (e) { return !e.isStatic; }).length;
+                $('#kpi-soldout').textContent = all.filter(function (e) { return e.availableSeats === 0; }).length;
             });
         }
 
@@ -773,8 +870,8 @@
 
         function row(b) {
             var tr = el('tr', { 'data-testid': 'booking-table-row', 'data-booking-id': b.id });
-            var view = el('button', { 'class': 'btn btn-sm btn-outline-secondary me-1', type: 'button', 'data-testid': 'view-booking-btn' }, 'View');
-            var cancel = el('button', { 'class': 'btn btn-sm btn-outline-danger', type: 'button', 'data-testid': 'cancel-booking-btn' }, 'Cancel');
+            var view = append(el('button', { 'class': 'btn btn-sm btn-tt-ghost me-1', type: 'button', 'data-testid': 'view-booking-btn' }), icon('bi-eye', 'me-1'), document.createTextNode('View'));
+            var cancel = append(el('button', { 'class': 'btn btn-sm btn-outline-danger', type: 'button', 'data-testid': 'cancel-booking-btn' }), icon('bi-x-circle', 'me-1'), document.createTextNode('Cancel'));
             view.addEventListener('click', function () { showBooking(b); });
             cancel.addEventListener('click', function () {
                 confirmAction({
@@ -789,15 +886,24 @@
                     });
                 });
             });
-            var customer = append(el('td'), el('div', { 'class': 'fw-semibold' }, b.customerName), el('div', { 'class': 'small text-secondary' }, b.customerEmail));
+            var customer = append(el('td'), el('div', { 'class': 'tt-row-title' }, b.customerName), el('div', { 'class': 'tt-row-sub' }, b.customerEmail));
+            var eventCell = el('td');
+            if (b.event) {
+                var thumb = el('img', { 'class': 'tt-thumb', src: imageFor(b.event), alt: '' });
+                thumb.addEventListener('error', function () { thumb.src = TT.images[b.event.category]; }, { once: true });
+                eventCell.appendChild(append(el('div', { 'class': 'd-flex align-items-center gap-3' }), thumb,
+                    append(el('div'), el('div', { 'class': 'tt-row-title' }, b.event.title), el('div', { 'class': 'tt-row-sub' }, b.event.city))));
+            } else {
+                eventCell.textContent = '—';
+            }
             return append(tr,
                 append(el('td'), el('span', { 'class': 'tt-ref' }, b.bookingRef)),
-                el('td', {}, b.event ? b.event.title : '—'),
+                eventCell,
                 customer,
                 el('td', { 'class': 'text-center fw-semibold' }, b.quantity),
-                el('td', { 'class': 'fw-semibold' }, money(b.totalPrice)),
+                el('td', { 'class': 'fw-bold text-dark' }, money(b.totalPrice)),
                 el('td', { 'class': 'small text-nowrap' }, formatDate(b.createdAt)),
-                append(el('td', { 'class': 'text-nowrap' }), view, cancel));
+                append(el('td', { 'class': 'text-nowrap text-end' }), view, cancel));
         }
 
         function load(page) {
@@ -812,6 +918,18 @@
                 r.data.data.forEach(function (b) { tbody.appendChild(row(b)); });
                 $('#admin-bookings-empty').hidden = p.total > 0;
                 updatePager(p);
+            });
+            api('GET', '/bookings?limit=100').then(function (r) {
+                if (!r.ok) return;
+                var all = r.data.data;
+                var events = {};
+                var tickets = 0;
+                var spent = 0;
+                all.forEach(function (b) { tickets += b.quantity; spent += b.totalPrice; events[b.eventId] = true; });
+                $('#kpi-bookings').textContent = r.data.pagination.total;
+                $('#kpi-tickets').textContent = tickets;
+                $('#kpi-revenue').textContent = money(spent);
+                $('#kpi-events').textContent = Object.keys(events).length;
             });
         }
 

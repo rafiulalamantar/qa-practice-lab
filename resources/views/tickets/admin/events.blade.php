@@ -4,12 +4,25 @@
 @section('tt-title', 'Manage Events')
 
 @section('tickets')
-<main class="container-xxl py-4">
-    <h1 class="h3 mb-4">Manage Events</h1>
+<main class="container-xxl px-3 px-lg-4">
+    <header class="tt-page-head mb-4">
+        <span class="tt-eyebrow"><i class="bi bi-sliders"></i> Manage</span>
+        <h1 class="mt-1">Manage Events</h1>
+        <p class="text-secondary mb-0">Create, edit and delete your own events. Featured events are read-only.</p>
+    </header>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3"><div class="tt-card tt-kpi"><small><i class="bi bi-calendar-event"></i> All events</small><strong id="kpi-total" data-testid="kpi-total">–</strong></div></div>
+        <div class="col-6 col-lg-3"><div class="tt-card tt-kpi"><small><i class="bi bi-person-workspace" style="background:#e4f2fc;color:#0b7fd1"></i> Your events</small><strong id="kpi-custom" data-testid="kpi-custom">–</strong><span>max {{ config('practice.tickets_max_events') }}</span></div></div>
+        <div class="col-6 col-lg-3"><div class="tt-card tt-kpi"><small><i class="bi bi-star" style="background:#fff1de;color:#e07a00"></i> Featured</small><strong id="kpi-featured" data-testid="kpi-featured">–</strong><span>read-only</span></div></div>
+        <div class="col-6 col-lg-3"><div class="tt-card tt-kpi"><small><i class="bi bi-slash-circle" style="background:#fdecec;color:#e5484d"></i> Sold out</small><strong id="kpi-soldout" data-testid="kpi-soldout">–</strong></div></div>
+    </div>
+
     <div class="row g-4">
-        <div class="col-lg-4">
-            <form class="tt-card p-4" id="admin-event-form" data-testid="admin-event-form" novalidate>
-                <h2 class="h5 mb-3" id="event-form-title">Add New Event</h2>
+        <div class="col-lg-4 col-xxl-3">
+            <form class="tt-card tt-form-card" id="admin-event-form" data-testid="admin-event-form" novalidate>
+                <h2 class="h5 mb-1" id="event-form-title">Add New Event</h2>
+                <p class="small text-secondary mb-4">Fields marked <span class="text-danger">*</span> are required.</p>
                 <div class="mb-3">
                     <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
                     <input id="title" name="title" class="form-control" placeholder="Event title" data-testid="event-title-input">
@@ -71,23 +84,23 @@
             </form>
         </div>
 
-        <div class="col-lg-8">
+        <div class="col-lg-8 col-xxl-9">
             <div class="tt-card p-0 overflow-hidden">
-                <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                <div class="d-flex justify-content-between align-items-center px-4 py-3 border-bottom">
                     <h2 class="h5 mb-0">All Events</h2>
-                    <span class="small text-secondary" id="admin-events-count" data-testid="admin-events-count"></span>
+                    <span class="tt-chip" style="background:var(--tt-bg)" id="admin-events-count" data-testid="admin-events-count"></span>
                 </div>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0 tt-table" id="admin-events-table" data-testid="admin-events-table">
-                        <thead><tr><th scope="col">Title</th><th scope="col">Category</th><th scope="col">Date</th><th scope="col">City</th><th scope="col">Price</th><th scope="col">Seats</th><th scope="col">Actions</th></tr></thead>
+                        <thead><tr><th scope="col">Event</th><th scope="col">Date</th><th scope="col">Price</th><th scope="col">Seats</th><th scope="col" class="text-end">Actions</th></tr></thead>
                         <tbody id="admin-events-body"></tbody>
                     </table>
                 </div>
-                <div class="text-center text-secondary py-5" id="admin-events-empty" hidden>No events yet</div>
+                <div class="tt-empty" id="admin-events-empty" hidden><div class="tt-empty-icon"><i class="bi bi-calendar-x"></i></div><h3 class="h6">No events yet</h3></div>
                 <nav class="tt-pager p-3 border-top" id="admin-events-pager" aria-label="Events pages" hidden>
-                    <button class="btn btn-outline-secondary btn-sm" type="button" data-page-prev data-testid="prev-page-btn">&larr; Prev</button>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" data-page-prev data-testid="prev-page-btn"><i class="bi bi-arrow-left me-1"></i> Prev</button>
                     <span class="small text-secondary" data-page-label data-testid="page-label"></span>
-                    <button class="btn btn-outline-secondary btn-sm" type="button" data-page-next data-testid="next-page-btn">Next &rarr;</button>
+                    <button class="btn btn-outline-secondary btn-sm" type="button" data-page-next data-testid="next-page-btn">Next <i class="bi bi-arrow-right ms-1"></i></button>
                 </nav>
             </div>
         </div>

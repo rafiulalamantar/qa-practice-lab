@@ -36,4 +36,7 @@ return [
 
     'cron_secret' => env('CRON_SECRET'),
 
+    // Cache-busting fallback for asset URLs; Vercel sets this per deploy.
+    'deploy_version' => env('VERCEL_GIT_COMMIT_SHA', ''),
+
 ];
