@@ -22,7 +22,17 @@ return [
     | by Vercel Cron through /api/cron/prune).
     */
     'order_retention_days' => (int) env('PRACTICE_ORDER_RETENTION_DAYS', 7),
-    'inactive_user_days' => (int) env('PRACTICE_INACTIVE_USER_DAYS', 30),
+    // Learner accounts are deleted this many days after registration, however
+    // active they are, so learners register again. The demo account is kept.
+    'account_lifetime_days' => (int) env('PRACTICE_ACCOUNT_LIFETIME_DAYS', 30),
+
+    /*
+    | TicketTrail sandbox caps per learner. When a cap is reached the oldest
+    | entry is replaced, so the tables cannot grow without bound.
+    */
+    'tickets_max_events' => (int) env('PRACTICE_TICKETS_MAX_EVENTS', 6),
+    'tickets_max_bookings' => (int) env('PRACTICE_TICKETS_MAX_BOOKINGS', 9),
+    'tickets_max_per_booking' => 10,
 
     'cron_secret' => env('CRON_SECRET'),
 

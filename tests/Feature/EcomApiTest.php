@@ -112,13 +112,13 @@ class EcomApiTest extends TestCase
         CartItem::create(['user_id' => $user->id, 'product_id' => $product->id]);
 
         $ids = $this->postJson('/api/ecom/order/create-order', [
-            'orders' => [['country' => 'India', 'productOrderedId' => $product->id]],
+            'orders' => [['country' => 'Bangladesh', 'productOrderedId' => $product->id]],
             'couponCode' => 'practice10',
         ], $headers)->assertCreated()->assertJson(['message' => 'Order Placed Successfully'])->json('orders');
 
         $this->assertSame(0, $user->cartItems()->count());
         $this->getJson('/api/ecom/order/get-orders-details?id='.$ids[0], $headers)
-            ->assertOk()->assertJsonPath('data.orderPrice', 539.1)->assertJsonPath('data.country', 'India');
+            ->assertOk()->assertJsonPath('data.orderPrice', 539.1)->assertJsonPath('data.country', 'Bangladesh');
     }
 
     public function test_order_rejects_unknown_country_and_inactive_coupon(): void
@@ -163,7 +163,10 @@ class EcomApiTest extends TestCase
         config(['practice.cron_secret' => 's3cret']);
         $old = Order::factory()->create(['created_at' => now()->subDays(10)]);
         $fresh = Order::factory()->create();
-        $stale = User::factory()->create(['created_at' => now()->subDays(40)]);
+        $stale = User::factory()->create(['created_at' => now()->subDays(40), 'last_login_at' => now()->subHour()]);
+        $staleToken = $stale->createToken('client');
+        $recent = User::factory()->create(['created_at' => now()->subDays(10)]);
+        User::where('email', 'demo@practice.test')->update(['created_at' => now()->subDays(90)]);
 
         $this->getJson('/api/cron/prune')->assertForbidden();
         $this->getJson('/api/cron/prune', ['Authorization' => 'Bearer s3cret'])->assertOk();
@@ -171,6 +174,8 @@ class EcomApiTest extends TestCase
         $this->assertModelMissing($old);
         $this->assertModelExists($fresh);
         $this->assertModelMissing($stale);
+        $this->assertModelMissing($staleToken->accessToken);
+        $this->assertModelExists($recent);
         $this->assertDatabaseHas('users', ['email' => 'demo@practice.test']);
     }
 

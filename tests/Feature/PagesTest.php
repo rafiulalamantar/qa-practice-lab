@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 
 class PagesTest extends TestCase
@@ -28,10 +29,20 @@ class PagesTest extends TestCase
             'product details' => ['/client/dashboard/product-details/1', 'id="detail-add"'],
             'order details' => ['/client/dashboard/order-details/abc', 'id="order-summary"'],
             'api docs' => ['/docs/api', '/order/create-order'],
+            'tickets home' => ['/tickets', 'id="featured-events"'],
+            'tickets login' => ['/tickets/login', 'data-testid="login-btn"'],
+            'tickets register' => ['/tickets/register', 'data-testid="register-confirm-password"'],
+            'tickets events' => ['/tickets/events', 'data-testid="category-filter"'],
+            'tickets event details' => ['/tickets/events/1', 'id="ticket-count"'],
+            'tickets bookings' => ['/tickets/bookings', 'data-testid="clear-bookings-btn"'],
+            'tickets booking details' => ['/tickets/bookings/1', 'data-testid="check-refund-btn"'],
+            'tickets admin events' => ['/tickets/admin/events', 'data-testid="admin-event-form"'],
+            'tickets admin bookings' => ['/tickets/admin/bookings', 'data-testid="booking-event-filter"'],
+            'tickets api docs' => ['/tickets/api-docs', 'swagger-ui'],
         ];
     }
 
-    #[\PHPUnit\Framework\Attributes\DataProvider('pages')]
+    #[DataProvider('pages')]
     public function test_page_renders(string $uri, string $needle): void
     {
         $this->get($uri)->assertOk()->assertSee($needle, false);

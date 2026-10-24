@@ -24,7 +24,7 @@
         ],
         'Orders' => [
             ['POST', '/order/apply-coupon', true, '{"couponCode":"PRACTICE10"}', '200 {"discountPercent":10} · 404 Invalid Coupon'],
-            ['POST', '/order/create-order', true, '{"orders":[{"country":"India","productOrderedId":1}],"couponCode":"PRACTICE10"}', '201 {"orders":["<orderId>"],"productOrderId":["1"],"message":"Order Placed Successfully"}'],
+            ['POST', '/order/create-order', true, '{"orders":[{"country":"Bangladesh","productOrderedId":1}],"couponCode":"PRACTICE10"}', '201 {"orders":["<orderId>"],"productOrderId":["1"],"message":"Order Placed Successfully"}'],
             ['GET', '/order/get-orders-for-customer/{userId}', true, null, '200 {"data":[…],"count":n} · 403 another user'],
             ['GET', '/order/get-orders-details?id={orderId}', true, null, '200 · 403 "You are not authorize to view this order" · 404'],
             ['DELETE', '/order/delete-order/{orderId}', true, null, '200 {"message":"Orders Deleted Successfully"} · 403'],
@@ -53,7 +53,7 @@
         <ul class="mb-0">
             <li>Demo login: <code>{{ config('practice.demo_email') }}</code> / <code>{{ config('practice.demo_password') }}</code></li>
             <li>Valid coupons: <code>PRACTICE10</code> (10%), <code>QA25</code> (25%), <code>FREESHIP</code> (5%). Inactive: <code>EXPIRED50</code></li>
-            <li>Orders are deleted after {{ config('practice.order_retention_days') }} days; accounts unused for {{ config('practice.inactive_user_days') }} days are removed.</li>
+            <li>Orders are deleted after {{ config('practice.order_retention_days') }} days; accounts (except the demo account) are deleted {{ config('practice.account_lifetime_days') }} days after registration, so register again after that.</li>
         </ul>
     </div>
 

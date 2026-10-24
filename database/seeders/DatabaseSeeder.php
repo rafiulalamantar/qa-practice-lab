@@ -3,7 +3,6 @@
 namespace Database\Seeders;
 
 use App\Models\Coupon;
-use App\Models\Product;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 
@@ -11,7 +10,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call(ProductSeeder::class);
+        $this->call([ProductSeeder::class, EventSeeder::class]);
 
         foreach ([['PRACTICE10', 10], ['QA25', 25], ['FREESHIP', 5]] as [$code, $pct]) {
             Coupon::updateOrCreate(['code' => $code], ['discount_percent' => $pct, 'active' => true]);

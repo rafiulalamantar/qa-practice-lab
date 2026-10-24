@@ -41,4 +41,18 @@ Route::prefix('client')->group(function () {
     Route::view('/dashboard/order-details/{id}', 'client.dashboard.order-details');
 });
 
+// Module 4: TicketTrail. Static shells; data comes from /api/tickets.
+Route::prefix('tickets')->group(function () {
+    Route::view('/', 'tickets.home');
+    Route::view('/login', 'tickets.login');
+    Route::view('/register', 'tickets.register');
+    Route::view('/events', 'tickets.events');
+    Route::view('/events/{id}', 'tickets.event-details');
+    Route::view('/bookings', 'tickets.bookings');
+    Route::view('/bookings/{id}', 'tickets.booking-details');
+    Route::view('/admin/events', 'tickets.admin.events');
+    Route::view('/admin/bookings', 'tickets.admin.bookings');
+    Route::view('/api-docs', 'tickets.api-docs');
+});
+
 Route::view('/docs/api', 'docs.api');

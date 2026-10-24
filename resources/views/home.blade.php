@@ -17,7 +17,7 @@
 
 <main class="container py-5">
     <div class="row g-4">
-        <div class="col-md-4">
+        <div class="col-md-6 col-xl-3">
             <a href="{{ url('/practice') }}" class="text-decoration-none text-reset">
                 <div class="module-card p-4 h-100">
                     <div class="tag">Module 1 &middot; UI widgets</div>
@@ -26,7 +26,7 @@
                 </div>
             </a>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6 col-xl-3">
             <a href="{{ url('/protoshop') }}" class="text-decoration-none text-reset">
                 <div class="module-card p-4 h-100">
                     <div class="tag">Module 2 &middot; Forms &amp; flows</div>
@@ -35,12 +35,21 @@
                 </div>
             </a>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-6 col-xl-3">
             <a href="{{ url('/client') }}" class="text-decoration-none text-reset">
                 <div class="module-card p-4 h-100">
                     <div class="tag">Module 3 &middot; E2E + API</div>
                     <h2 class="h4 mt-2">ShopSphere</h2>
                     <p class="text-secondary mb-0">A full e-commerce app: register, login, filter products, cart, coupons, checkout and order history, backed by a token-secured REST API.</p>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <a href="{{ url('/tickets') }}" class="text-decoration-none text-reset">
+                <div class="module-card p-4 h-100">
+                    <div class="tag">Module 4 &middot; CRUD + API</div>
+                    <h2 class="h4 mt-2">TicketTrail</h2>
+                    <p class="text-secondary mb-0">Event booking: browse and filter events, book seats, cancel, check refunds, and manage your own events, with a Swagger-documented REST API.</p>
                 </div>
             </a>
         </div>
@@ -64,8 +73,11 @@
         <div class="col-lg-5">
             <div class="module-card p-4 h-100">
                 <h2 class="h5">API practice</h2>
-                <p class="text-secondary">ShopSphere's REST API is documented so you can mix UI and API steps: log in via API, inject the token, or mock responses.</p>
-                <a class="btn btn-lab" href="{{ url('/docs/api') }}">Read the API reference</a>
+                <p class="text-secondary">Both apps' REST APIs are documented so you can mix UI and API steps: log in via API, inject the token, or mock responses.</p>
+                <div class="d-flex flex-wrap gap-2">
+                    <a class="btn btn-lab" href="{{ url('/docs/api') }}">ShopSphere API</a>
+                    <a class="btn btn-outline-secondary" href="{{ url('/tickets/api-docs') }}">TicketTrail API (Swagger)</a>
+                </div>
             </div>
         </div>
     </div>

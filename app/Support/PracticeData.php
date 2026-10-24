@@ -22,15 +22,15 @@ class PracticeData
     ];
 
     public const STAFF = [
-        ['Alex', 'Engineer', 'Chennai', 28],
-        ['Ben', 'Mechanic', 'Bengaluru', 23],
-        ['Dwayne', 'Manager', 'Kolkata', 48],
-        ['Ivory', 'Receptionist', 'Chennai', 18],
-        ['Jack', 'Engineer', 'Pune', 32],
-        ['Joe', 'Postman', 'Chennai', 46],
-        ['Raymond', 'Businessman', 'Mumbai', 37],
-        ['Ronaldo', 'Sportsman', 'Chennai', 31],
-        ['Smith', 'Cricketer', 'Delhi', 33],
+        ['Alex', 'Engineer', 'Dhaka', 28],
+        ['Ben', 'Mechanic', 'Chattogram', 23],
+        ['Dwayne', 'Manager', 'Sylhet', 48],
+        ['Ivory', 'Receptionist', 'Dhaka', 18],
+        ['Jack', 'Engineer', 'Khulna', 32],
+        ['Joe', 'Postman', 'Dhaka', 46],
+        ['Raymond', 'Businessman', 'Rajshahi', 37],
+        ['Ronaldo', 'Sportsman', 'Dhaka', 31],
+        ['Smith', 'Cricketer', 'Barishal', 33],
     ];
 
     /** @return list<array<string, mixed>> */

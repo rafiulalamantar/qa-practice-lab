@@ -8,7 +8,8 @@ Built with Laravel 13 + MySQL, deployable to Vercel.
 | Automation Practice | `/practice` | radio, auto-suggest, dropdown, checkbox, windows, tabs, alerts/confirm, web tables, show/hide, hover menu, iframe |
 | ProtoShop | `/protoshop` | form validation, two-way binding, disabled controls, product grid, cart table, delayed country suggestions, T&C checkbox |
 | ShopSphere | `/client` | register / login / reset password, product filters, cart, coupons, checkout typeahead, order history, CSV download, auth errors |
-| API reference | `/docs/api` | 17 REST endpoints under `/api/ecom` for API tests and UI+API hybrid tests |
+| TicketTrail | `/tickets` | event booking: search/category/city filters, pagination, seat stepper, sold-out states, confirm dialogs, a 4 s async refund check, event CRUD with read-only featured rows, booking table with event filter |
+| API reference | `/docs/api`, `/tickets/api-docs` | ShopSphere's 17 endpoints under `/api/ecom`; TicketTrail's 16 under `/api/tickets` (Swagger UI, `openapi.json` imports into Postman) |
 
 **Demo login:** `demo@practice.test` / `Demo@1234`. Coupons: `PRACTICE10`, `QA25`, `FREESHIP`, and `EXPIRED50` (inactive).
 
@@ -31,8 +32,14 @@ Key decisions:
   inject the token, intercept or mock network calls, and test the API on its own.
 - **Isolation for many concurrent learners.** Carts and orders are scoped to the token's user. Reading or deleting
   another user's order returns 403. Order IDs are random 24-hex strings, not sequential, so they can't be guessed.
-- **Self-cleaning.** `practice:prune` deletes orders and carts older than 7 days, expired tokens, and accounts unused for
-  30 days. The demo account is never deleted, and its password cannot be reset.
+- **TicketTrail sandbox.** It shares the users table (and the demo login) with ShopSphere, but stores its session as
+  `tt_token` / `tt_user` in `localStorage`. Featured events are shared and read-only (`isStatic: true`); seats are counted
+  per user, so one learner selling out an event never affects another. Each account keeps at most 6 custom events and
+  9 bookings, and the oldest is replaced. Errors use `{success: false, error, details?}`, with validation failures as 400.
+  The API accepts any 6+ character password while the register page demands a stronger one: a deliberate UI-vs-API gap.
+- **Self-cleaning.** `practice:prune` deletes orders, bookings and carts older than 7 days, expired tokens, and every learner
+  account 30 days after it was registered (however active it is), so learners register again. The demo account shown
+  on the login pages is never deleted, and its password cannot be reset.
 - **Abuse limits.** 300 API requests/min per user, and login is limited to 30/min per IP and 10/min per email.
 - **ProtoShop and Practice are stateless.** They make no database queries, so they cost almost nothing to serve.
 - **Challenge mode** (`?chaos=1`, `?chaos=0`, `?seed=N`): random reveal delays, randomised element ids, shuffled table

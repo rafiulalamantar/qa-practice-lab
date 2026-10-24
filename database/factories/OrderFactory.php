@@ -24,7 +24,7 @@ class OrderFactory extends Factory
             'product_image' => $product->image,
             'product_description' => $product->description,
             'price' => $product->price,
-            'country' => 'India',
+            'country' => 'Bangladesh',
             'ordered_by' => fn (array $attributes) => User::find($attributes['user_id'])->email,
         ];
     }

@@ -22,6 +22,6 @@
 <div class="demo-creds p-3 mt-4">
     <strong>Demo account</strong> (shared, read-only password):<br>
     <span id="demo-email">{{ config('practice.demo_email') }}</span> / <span id="demo-password">{{ config('practice.demo_password') }}</span>
-    <div class="text-secondary mt-1">Register your own account for private carts and orders.</div>
+    <div class="text-secondary mt-1">Register your own account for private carts and orders. It is deleted {{ config('practice.account_lifetime_days') }} days after registration; the demo account always stays.</div>
 </div>
 @endsection

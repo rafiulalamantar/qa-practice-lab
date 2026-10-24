@@ -120,6 +120,55 @@ app-card { display: block; }
 }
 .loading-overlay[hidden] { display: none; }
 
+/* ---------- TicketTrail ---------- */
+.tt-body { background: #f8fafc; --tt: #4338ca; --tt-dark: #3730a3; --tt-soft: #eef2ff; }
+/* Bootstrap display utilities would otherwise beat the hidden attribute. */
+.tt-body [hidden] { display: none !important; }
+.text-tt { color: var(--tt); }
+.btn-tt { background: var(--tt); border-color: var(--tt); color: #fff; }
+.btn-tt:hover, .btn-tt:focus { background: var(--tt-dark); border-color: var(--tt-dark); color: #fff; }
+.tt-body a:not(.btn):not(.nav-link):not(.dropdown-item):not(.navbar-brand) { color: var(--tt); }
+.tt-nav { background: #fff; border-bottom: 1px solid var(--lab-border); }
+.tt-nav .nav-link.active { color: var(--tt); font-weight: 600; }
+.tt-brand { font-weight: 800; letter-spacing: -.01em; }
+.tt-auth { min-height: 100vh; }
+.tt-auth-aside { background: linear-gradient(150deg, #1e1b4b, #4338ca 55%, #7c3aed); color: #fff; }
+.tt-auth-aside .lead { color: #e0e7ff; }
+.tt-feature-list { color: #e0e7ff; padding-left: 1.1rem; line-height: 2; }
+.tt-card { background: #fff; border: 1px solid var(--lab-border); border-radius: 16px; box-shadow: 0 4px 18px rgba(15, 23, 42, .05); }
+.tt-pw-rules { list-style: none; padding: 0; color: var(--lab-muted); }
+.tt-pw-rules li::before { content: "○ "; }
+.tt-pw-rules li.is-met { color: #15803d; }
+.tt-pw-rules li.is-met::before { content: "✓ "; }
+.tt-hero { background: linear-gradient(135deg, #312e81, #4338ca 50%, #7c3aed); color: #fff; padding: 72px 0 64px; }
+.tt-hero .lead { color: #e0e7ff; max-width: 640px; }
+.tt-hero-accent { color: #c7d2fe; }
+.tt-cta { background: var(--tt-soft); border-radius: 16px; }
+.tt-note { background: var(--tt-soft); color: #3730a3; border: 1px solid #c7d2fe; }
+.tt-event-card { background: #fff; border: 1px solid var(--lab-border); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; transition: box-shadow .15s, transform .15s; }
+.tt-event-card:hover { box-shadow: 0 10px 24px rgba(67, 56, 202, .12); transform: translateY(-2px); }
+.tt-event-media { position: relative; aspect-ratio: 16 / 9; background: var(--tt-soft); }
+.tt-event-media img { width: 100%; height: 100%; object-fit: cover; }
+.tt-badges { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; gap: 6px; }
+.tt-sold-out { position: absolute; inset: 0; background: rgba(0, 0, 0, .45); display: flex; align-items: center; justify-content: center; }
+.tt-sold-out span { background: #dc2626; color: #fff; font-weight: 700; padding: 4px 16px; border-radius: 999px; }
+.tt-skeleton { height: 320px; border-radius: 14px; background: linear-gradient(90deg, #eef2f7 25%, #f8fafc 50%, #eef2f7 75%); background-size: 200% 100%; animation: tt-shimmer 1.2s infinite; }
+@keyframes tt-shimmer { to { background-position: -200% 0; } }
+@media (prefers-reduced-motion: reduce) { .tt-skeleton { animation: none; } }
+.tt-pager { display: flex; align-items: center; justify-content: center; gap: 12px; }
+.tt-detail-image { border-radius: 16px; overflow: hidden; aspect-ratio: 16 / 9; background: var(--tt-soft); }
+.tt-detail-image img { height: 100%; object-fit: cover; }
+.tt-meta li { margin-bottom: 4px; }
+.tt-step { width: 38px; height: 38px; padding: 0; font-weight: 700; }
+.tt-total { background: var(--tt-soft); border-radius: 10px; }
+.tt-ref { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-weight: 700; background: var(--tt-soft); color: var(--tt-dark); padding: 2px 8px; border-radius: 6px; }
+.tt-booking-card { background: #fff; border: 1px solid var(--lab-border); border-radius: 14px; }
+.tt-section-title { text-transform: uppercase; letter-spacing: .06em; color: var(--lab-muted); font-size: 12px; margin-bottom: 12px; }
+.tt-dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 16px; }
+.tt-dl dt { font-weight: 500; color: var(--lab-muted); }
+.tt-dl dd { margin: 0; overflow-wrap: anywhere; }
+.tt-table th { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--lab-muted); background: #f8fafc; }
+
 @media (max-width: 576px) {
     .hero { padding: 40px 0; }
     .cartSection img { width: 64px; }
