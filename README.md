@@ -154,3 +154,12 @@ vendor/bin/pint --dirty    # format PHP before committing
 - The Hobby plan allows one cron run per day, which is all `practice:prune` needs.
 - If you outgrow Vercel's PHP runtime (it is community-maintained), the same code runs unchanged on Laravel Cloud,
   Railway or any VPS. Only `vercel.json` and `api/index.php` are Vercel-specific.
+
+## Author and licence
+
+Built by **Rafiul Alam Antar** ([GitHub](https://github.com/rafiulalamantar) · [LinkedIn](https://www.linkedin.com/in/rafiulalamantar/) · [Buy me a coffee](https://buymeacoffee.com/rafiulalamantar)). Released under the [MIT License](LICENSE);
+third-party components keep their own licences, listed at the end of `LICENSE`.
+
+The footer on every page shows these credits. Its links come from `config/practice.php` (`author`), and any link left
+empty is hidden; each can be overridden with the `PRACTICE_AUTHOR_*` environment variables.
+

@@ -48,6 +48,31 @@ class PagesTest extends TestCase
         $this->get($uri)->assertOk()->assertSee($needle, false);
     }
 
+    public function test_every_page_shows_author_footer_but_embedded_pages_do_not(): void
+    {
+        // An empty link is hidden.
+        config(['practice.author.linkedin' => '']);
+
+        foreach (['/', '/practice', '/protoshop', '/client/auth/login', '/tickets', '/tickets/login', '/docs/api', '/tickets/api-docs'] as $uri) {
+            $this->get($uri)->assertOk()
+                ->assertSee('data-testid="site-footer"', false)
+                ->assertSee('Rafiul Alam Antar')
+                ->assertSee('https://buymeacoffee.com/rafiulalamantar', false)
+                ->assertDontSee('data-testid="footer-linkedin"', false);
+        }
+
+        foreach (['/practice/frame', '/practice/window'] as $uri) {
+            $this->get($uri)->assertOk()->assertDontSee('data-testid="site-footer"', false);
+        }
+    }
+
+    public function test_license_is_served_as_plain_text(): void
+    {
+        $this->get('/license')->assertOk()
+            ->assertHeader('Content-Type', 'text/plain; charset=UTF-8')
+            ->assertSee('Copyright (c) 2026 Rafiul Alam Antar');
+    }
+
     public function test_client_root_redirects_to_login(): void
     {
         $this->get('/client')->assertRedirect('/client/auth/login');

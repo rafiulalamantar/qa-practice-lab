@@ -24,6 +24,21 @@ a { color: var(--lab-accent); }
 }
 .btn-lab:hover, .btn-lab:focus { background: var(--lab-accent-dark); border-color: var(--lab-accent-dark); color: #fff; }
 
+/* Author credits footer, shared by every page (partials/site-footer). */
+.site-footer {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 20px;
+    padding: 14px 20px; border-top: 1px solid var(--lab-border); background: var(--lab-surface);
+    color: var(--lab-muted); font: 14px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+.site-footer strong { color: var(--lab-ink); }
+.site-footer-links { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
+.site-footer-links a { color: var(--lab-accent); text-decoration: none; }
+.site-footer-links a:hover { text-decoration: underline; }
+.site-footer-links a.site-footer-coffee {
+    padding: 4px 12px; border-radius: 999px; background: #ffdd00; color: #1f2937; font-weight: 600;
+}
+.site-footer-links a.site-footer-coffee:hover { background: #f5d000; text-decoration: none; }
+
 .chaos-banner {
     position: sticky; top: 0; z-index: 2000;
     background: #fef3c7; color: #92400e; border-bottom: 1px solid #fcd34d;

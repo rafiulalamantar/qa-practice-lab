@@ -1,5 +1,7 @@
 @extends('layouts.base')
 
+@section('hide-site-footer', true)
+
 @section('title', 'QA Practice Lab - Courses')
 
 @section('body')

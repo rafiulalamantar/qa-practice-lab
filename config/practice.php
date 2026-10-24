@@ -10,6 +10,17 @@ return [
     'demo_password' => env('PRACTICE_DEMO_PASSWORD', 'Demo@1234'),
 
     /*
+    | Author credits shown in the footer of every page. A link that is left
+    | empty is simply not shown.
+    */
+    'author' => [
+        'name' => 'Rafiul Alam Antar',
+        'github' => env('PRACTICE_AUTHOR_GITHUB', 'https://github.com/rafiulalamantar'),
+        'linkedin' => env('PRACTICE_AUTHOR_LINKEDIN', 'https://www.linkedin.com/in/rafiulalamantar/'),
+        'coffee' => env('PRACTICE_AUTHOR_COFFEE', 'https://buymeacoffee.com/rafiulalamantar'),
+    ],
+
+    /*
     | Challenge mode: when a request carries the "practice_chaos" cookie or
     | an "X-Chaos-Mode: 1" header, API responses are delayed by a random
     | amount within this range so learners must use proper waits.

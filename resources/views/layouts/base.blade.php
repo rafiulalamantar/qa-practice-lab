@@ -18,6 +18,10 @@
         &middot; <a href="?chaos=0" id="chaos-off">turn off</a>
     </div>
     @yield('body')
+    {{-- Pages loaded inside an iframe or popup set this so learners' assertions on them stay unchanged. --}}
+    @sectionMissing('hide-site-footer')
+        @include('partials.site-footer')
+    @endif
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     @stack('scripts')
 </body>

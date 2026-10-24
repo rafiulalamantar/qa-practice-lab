@@ -56,3 +56,6 @@ Route::prefix('tickets')->group(function () {
 });
 
 Route::view('/docs/api', 'docs.api');
+
+// The repository's LICENSE file, linked from every page's footer.
+Route::get('/license', fn () => response(file_get_contents(base_path('LICENSE')))->header('Content-Type', 'text/plain; charset=UTF-8'));

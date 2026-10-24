@@ -2,9 +2,15 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "laravel/laravel",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "QA Practice Lab: always-on practice web apps and APIs for UI and API test automation.",
     "keywords": ["laravel", "framework"],
     "license": "MIT",
+    "authors": [
+        {
+            "name": "Rafiul Alam Antar",
+            "homepage": "https://github.com/rafiulalamantar"
+        }
+    ],
     "require": {
         "php": "^8.3",
         "laravel/framework": "^13.17",
