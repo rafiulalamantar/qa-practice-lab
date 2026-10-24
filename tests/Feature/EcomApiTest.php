@@ -2,12 +2,16 @@
 
 namespace Tests\Feature;
 
+use App\Models\Booking;
 use App\Models\CartItem;
+use App\Models\Event;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class EcomApiTest extends TestCase
@@ -177,6 +181,53 @@ class EcomApiTest extends TestCase
         $this->assertModelMissing($staleToken->accessToken);
         $this->assertModelExists($recent);
         $this->assertDatabaseHas('users', ['email' => 'demo@practice.test']);
+    }
+
+    public function test_expired_account_takes_all_its_data_with_it_even_without_foreign_keys(): void
+    {
+        // Simulates a database that does not enforce ON DELETE CASCADE.
+        Schema::disableForeignKeyConstraints();
+
+        $expired = User::factory()->create(['created_at' => now()->subDays(40)]);
+        $recent = User::factory()->create();
+        $featured = Event::whereNull('user_id')->first();
+        $ownEvent = Event::factory()->create(['user_id' => $expired->id]);
+
+        $cartItem = CartItem::create(['user_id' => $expired->id, 'product_id' => Product::first()->id, 'quantity' => 1]);
+        $order = Order::factory()->create(['user_id' => $expired->id]);
+        $ownBooking = Booking::factory()->create(['user_id' => $expired->id, 'event_id' => $featured->id]);
+        $bookingOnOwnEvent = Booking::factory()->create(['user_id' => $recent->id, 'event_id' => $ownEvent->id]);
+        $keptBooking = Booking::factory()->create(['user_id' => $recent->id, 'event_id' => $featured->id]);
+        $token = $expired->createToken('client')->accessToken;
+
+        $this->artisan('practice:prune')->assertSuccessful();
+
+        foreach ([$expired, $ownEvent, $cartItem, $order, $ownBooking, $bookingOnOwnEvent, $token] as $model) {
+            $this->assertModelMissing($model);
+        }
+        $this->assertModelExists($recent);
+        $this->assertModelExists($keptBooking);
+        $this->assertModelExists($featured);
+        $this->assertDatabaseHas('users', ['email' => 'demo@practice.test']);
+    }
+
+    public function test_prune_sweeps_rows_whose_owner_no_longer_exists(): void
+    {
+        Schema::disableForeignKeyConstraints();
+
+        $ghost = User::factory()->create();
+        $event = Event::factory()->create(['user_id' => $ghost->id]);
+        $booking = Booking::factory()->create(['user_id' => User::factory(), 'event_id' => $event->id]);
+        $order = Order::factory()->create(['user_id' => $ghost->id]);
+        $token = $ghost->createToken('client')->accessToken;
+        DB::table('users')->where('id', $ghost->id)->delete();
+
+        $this->artisan('practice:prune')->assertSuccessful();
+
+        foreach ([$event, $booking, $order, $token] as $model) {
+            $this->assertModelMissing($model);
+        }
+        $this->assertSame(6, Event::whereNull('user_id')->count());
     }
 
     public function test_migrate_hook_requires_secret_and_is_idempotent(): void

@@ -6,16 +6,17 @@ use App\Models\Booking;
 use App\Models\CartItem;
 use App\Models\Order;
 use App\Models\User;
+use App\Support\AccountPurger;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Laravel\Sanctum\PersonalAccessToken;
 
 #[Signature('practice:prune')]
-#[Description('Delete old orders and bookings, stale carts, expired tokens and expired learner accounts')]
+#[Description('Delete old orders and bookings, stale carts, expired tokens, expired learner accounts and orphaned rows')]
 class PrunePracticeData extends Command
 {
-    public function handle(): int
+    public function handle(AccountPurger $purger): int
     {
         $orderCutoff = now()->subDays(config('practice.order_retention_days'));
         $userCutoff = now()->subDays(config('practice.account_lifetime_days'));
@@ -26,13 +27,14 @@ class PrunePracticeData extends Command
         $carts = CartItem::where('updated_at', '<', $orderCutoff)->delete();
         $tokens = PersonalAccessToken::where('created_at', '<', $tokenCutoff)->delete();
 
-        // Accounts expire a fixed time after registration; their tokens go too,
-        // so an open browser session is logged out on its next request.
+        // Accounts expire a fixed time after registration and take all of their
+        // data with them; deleting their tokens logs out any open session.
         $expired = User::where('is_demo', false)->where('created_at', '<', $userCutoff)->pluck('id');
-        $tokens += PersonalAccessToken::where('tokenable_type', (new User)->getMorphClass())->whereIn('tokenable_id', $expired)->delete();
-        $users = User::whereIn('id', $expired)->delete();
+        $purged = $purger->purge($expired);
+        $orphans = $purger->sweepOrphans();
 
-        $this->info("Pruned {$orders} orders, {$bookings} bookings, {$carts} cart items, {$tokens} tokens, {$users} users.");
+        $this->info("Pruned {$orders} orders, {$bookings} bookings, {$carts} cart items, {$tokens} tokens.");
+        $this->info('Expired accounts: '.json_encode($purged).'. Orphans swept: '.json_encode($orphans).'.');
 
         return self::SUCCESS;
     }
