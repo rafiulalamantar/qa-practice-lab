@@ -40,7 +40,16 @@ Key decisions:
 - **Self-cleaning.** `practice:prune` deletes orders, bookings and carts older than 7 days, expired tokens, and every learner
   account 30 days after it was registered (however active it is), so learners register again. The demo account shown
   on the login pages is never deleted, and its password cannot be reset.
-- **Abuse limits.** 300 API requests/min per user, and login is limited to 30/min per IP and 10/min per email.
+- **Rate limits** (`app/Providers/AppServiceProvider.php`). Going over one returns 429.
+
+  | Limit | Applies to | Counted per |
+  | --- | --- | --- |
+  | 300 requests/min | every `/api/*` route | signed-in user, or IP for guests |
+  | 30/min and 10/min | register, login and password reset | IP, and email address |
+  | 10 requests/min | `/api/cron/prune` and `/api/cron/migrate` | IP |
+
+  The cron limit only slows anyone guessing `CRON_SECRET`; Vercel Cron calls once a day, and because the limit is per
+  IP, a guesser cannot lock it out.
 - **ProtoShop and Practice are stateless.** They make no database queries, so they cost almost nothing to serve.
 - **Challenge mode** (`?chaos=1`, `?chaos=0`, `?seed=N`): random reveal delays, randomised element ids, shuffled table
   rows, and random API latency (`X-Chaos-Mode: 1` header or `practice_chaos` cookie). A seed replays the same run, so a
@@ -152,6 +161,7 @@ vendor/bin/pint --dirty    # format PHP before committing
 - Cold starts take about 1 s; warm requests are fast. Challenge-mode delays count toward function time, so they are
   capped at 2.5 s (`PRACTICE_CHAOS_MAX_MS`).
 - The Hobby plan allows one cron run per day, which is all `practice:prune` needs.
+- Rate-limit counters live in the database cache (`CACHE_STORE=database`), so they hold across serverless instances.
 - If you outgrow Vercel's PHP runtime (it is community-maintained), the same code runs unchanged on Laravel Cloud,
   Railway or any VPS. Only `vercel.json` and `api/index.php` are Vercel-specific.
 
