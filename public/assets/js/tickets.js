@@ -61,10 +61,11 @@
             try {
                 localStorage.setItem('tt_token', data.token);
                 localStorage.setItem('tt_user', JSON.stringify(data.user));
+                if (TT.tokenMinutes) { localStorage.setItem('tt_token_expires', String(Date.now() + TT.tokenMinutes * 60000)); }
             } catch (e) { /* storage blocked */ }
         },
         clear: function () {
-            try { localStorage.removeItem('tt_token'); localStorage.removeItem('tt_user'); } catch (e) { }
+            try { ['tt_token', 'tt_user', 'tt_token_expires'].forEach(function (k) { localStorage.removeItem(k); }); } catch (e) { }
         }
     };
 

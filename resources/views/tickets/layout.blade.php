@@ -10,15 +10,24 @@
 @php($isAuthPage = in_array($page ?? '', ['login', 'register'], true))
 <script>
     (function () {
-        var token = null;
-        try { token = localStorage.getItem('tt_token'); } catch (e) { }
+        var token = null, expired = false;
+        try {
+            token = localStorage.getItem('tt_token');
+            var expires = Number(localStorage.getItem('tt_token_expires'));
+            if (token && expires && Date.now() >= expires) {
+                ['tt_token', 'tt_user', 'tt_token_expires'].forEach(function (k) { localStorage.removeItem(k); });
+                token = null;
+                expired = true;
+            }
+        } catch (e) { }
         var isAuthPage = @json($isAuthPage);
         var base = @json(url('/tickets'));
+        var message = expired ? 'Your session has expired. Please sign in again.' : 'Please sign in to continue';
         if (isAuthPage && token) {
             location.replace(base);
-        } else if (!isAuthPage && !token) {
-            try { sessionStorage.setItem('tt.flash', JSON.stringify({ message: 'Please sign in to continue', type: 'error' })); } catch (e) { }
-            location.replace(base + '/login');
+        } else if (!token && (!isAuthPage || expired)) {
+            try { sessionStorage.setItem('tt.flash', JSON.stringify({ message: message, type: 'error' })); } catch (e) { }
+            if (!isAuthPage) { location.replace(base + '/login'); }
         }
     })();
 </script>
@@ -111,6 +120,7 @@
         page: @json($page ?? ''),
         images: @json(collect(\App\Models\Event::CATEGORIES)->mapWithKeys(fn ($c) => [$c => \App\Support\VersionedAsset::url('images/events/'.strtolower($c).'.svg')])),
         accountDays: {{ config('practice.account_lifetime_days') }},
+        tokenMinutes: @json(config('sanctum.expiration')),
         limits: { events: {{ config('practice.tickets_max_events') }}, bookings: {{ config('practice.tickets_max_bookings') }}, perBooking: {{ config('practice.tickets_max_per_booking') }} }
     };
 </script>
