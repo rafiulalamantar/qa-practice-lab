@@ -66,6 +66,15 @@ class PagesTest extends TestCase
         }
     }
 
+    public function test_tickets_pages_check_the_session_before_first_paint(): void
+    {
+        $this->get('/tickets')->assertOk()
+            ->assertSeeInOrder(['var isAuthPage = false;', '</head>', 'id="featured-events"'], false);
+
+        $this->get('/tickets/login')->assertOk()
+            ->assertSeeInOrder(['var isAuthPage = true;', '</head>'], false);
+    }
+
     public function test_license_is_served_as_plain_text(): void
     {
         $this->get('/license')->assertOk()

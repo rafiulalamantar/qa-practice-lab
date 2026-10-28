@@ -5,6 +5,25 @@
 @endsection
 @section('body-class', 'tt-body')
 
+{{-- Runs before first paint so a guarded page never flashes before the redirect in tickets.js. --}}
+@push('head')
+@php($isAuthPage = in_array($page ?? '', ['login', 'register'], true))
+<script>
+    (function () {
+        var token = null;
+        try { token = localStorage.getItem('tt_token'); } catch (e) { }
+        var isAuthPage = @json($isAuthPage);
+        var base = @json(url('/tickets'));
+        if (isAuthPage && token) {
+            location.replace(base);
+        } else if (!isAuthPage && !token) {
+            try { sessionStorage.setItem('tt.flash', JSON.stringify({ message: 'Please sign in to continue', type: 'error' })); } catch (e) { }
+            location.replace(base + '/login');
+        }
+    })();
+</script>
+@endpush
+
 @push('styles')
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
