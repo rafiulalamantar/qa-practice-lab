@@ -70,7 +70,7 @@ class PagesTest extends TestCase
     {
         $this->get('/tickets')->assertOk()
             ->assertSeeInOrder(['var isAuthPage = false;', '</head>', 'id="featured-events"'], false)
-            ->assertSee('tokenMinutes: '.config('sanctum.expiration'), false);
+            ->assertSee('tokenMinutes: '.(int) config('sanctum.expiration').',', false);
 
         $this->get('/tickets/login')->assertOk()
             ->assertSeeInOrder(['var isAuthPage = true;', '</head>'], false);

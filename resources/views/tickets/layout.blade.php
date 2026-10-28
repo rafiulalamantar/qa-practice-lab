@@ -120,7 +120,7 @@
         page: @json($page ?? ''),
         images: @json(collect(\App\Models\Event::CATEGORIES)->mapWithKeys(fn ($c) => [$c => \App\Support\VersionedAsset::url('images/events/'.strtolower($c).'.svg')])),
         accountDays: {{ config('practice.account_lifetime_days') }},
-        tokenMinutes: @json(config('sanctum.expiration')),
+        tokenMinutes: {{ (int) config('sanctum.expiration') }},
         limits: { events: {{ config('practice.tickets_max_events') }}, bookings: {{ config('practice.tickets_max_bookings') }}, perBooking: {{ config('practice.tickets_max_per_booking') }} }
     };
 </script>
