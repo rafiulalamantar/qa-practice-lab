@@ -30,5 +30,9 @@ class AppServiceProvider extends ServiceProvider
             Limit::perMinute(30)->by('ip:'.$request->ip()),
             Limit::perMinute(10)->by('email:'.strtolower((string) $request->input('userEmail', $request->input('email')))),
         ]);
+
+        // Vercel Cron calls once a day, so this only slows anyone guessing
+        // CRON_SECRET. Keyed per IP so a guesser cannot lock Vercel Cron out.
+        RateLimiter::for('cron', fn (Request $request) => Limit::perMinute(10)->by('ip:'.$request->ip()));
     }
 }

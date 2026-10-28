@@ -79,6 +79,27 @@ class PrunePracticeDataTest extends TestCase
         $this->assertModelExists($expired);
     }
 
+    public function test_cron_routes_return_429_after_10_requests_a_minute_from_one_ip(): void
+    {
+        $this->freezeTime();
+        config(['practice.cron_secret' => 's3cret']);
+        $expired = User::factory()->create(['created_at' => now()->subDays(40)]);
+        $attacker = $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.7']);
+        for ($guess = 0; $guess < 10; $guess++) {
+            $attacker->getJson('/api/cron/prune', ['Authorization' => "Bearer guess-{$guess}"])->assertForbidden();
+        }
+
+        $response = $attacker->getJson('/api/cron/prune', ['Authorization' => 'Bearer s3cret']);
+
+        $response->assertTooManyRequests();
+        $attacker->postJson('/api/cron/migrate', [], ['Authorization' => 'Bearer s3cret'])->assertTooManyRequests();
+        $this->assertModelExists($expired);
+
+        $this->withServerVariables(['REMOTE_ADDR' => '198.51.100.1'])
+            ->getJson('/api/cron/prune', ['Authorization' => 'Bearer s3cret'])->assertOk();
+        $this->assertModelMissing($expired);
+    }
+
     public function test_purger_does_not_delete_the_demo_account_even_when_given_its_id(): void
     {
         $demo = User::where('email', 'demo@practice.test')->firstOrFail();
