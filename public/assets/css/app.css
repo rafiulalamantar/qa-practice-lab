@@ -56,7 +56,36 @@ a { color: var(--lab-accent); }
 .module-card .tag { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--lab-accent); font-weight: 700; }
 
 /* ---------- Practice page ---------- */
+/* The practice page gets its own indigo palette so it doesn't mirror the page it was modelled on. */
+.practice-page {
+    --lab-accent: #4f46e5;
+    --lab-accent-dark: #3730a3;
+    --lab-accent-soft: #e0e7ff;
+    --lab-surface: #f5f3ff;
+    --lab-border: #ddd6fe;
+    --lab-legend: #312e81;
+    background: #fcfbff;
+}
+.practice-page h1 { color: var(--lab-legend); }
+.practice-page .inputs { background: var(--lab-surface); }
+.practice-page .inputs:focus { background: #fff; }
+.practice-page .table-display tbody tr:nth-child(even), .practice-page .table-fixed tbody tr:nth-child(even) { background: var(--lab-surface); }
+/* Course catalogue loaded inside the practice page iframe. */
+.frame-nav { background: var(--lab-legend); }
+.practice-page .course-card { border-color: var(--lab-border); border-top: 3px solid var(--lab-accent); }
+.practice-page .course-card .price { background: var(--lab-accent); }
+.practice-page .pricing-title { background: var(--lab-surface); border-color: var(--lab-border) !important; }
+.practice-page .pricing-title h3 { color: var(--lab-accent-dark); }
 .practice-header { background: var(--lab-surface); border-bottom: 1px solid var(--lab-border); padding: 14px 0; }
+.practice-header .btn-primary {
+    --bs-btn-bg: var(--lab-accent); --bs-btn-border-color: var(--lab-accent);
+    --bs-btn-hover-bg: var(--lab-accent-dark); --bs-btn-hover-border-color: var(--lab-accent-dark);
+    --bs-btn-active-bg: var(--lab-accent-dark); --bs-btn-active-border-color: var(--lab-accent-dark);
+}
+.blinkingText { color: #c2410c; font-weight: 600; text-decoration: none; animation: blink-text 1s steps(1, end) infinite; }
+.blinkingText:hover, .blinkingText:focus { color: #9a3412; text-decoration: underline; }
+@keyframes blink-text { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .blinkingText { animation: none; } }
 .practice-block {
     display: flex; flex-wrap: wrap; gap: 24px;
     padding: 20px 0; border-bottom: 1px solid var(--lab-border);

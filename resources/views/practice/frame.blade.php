@@ -4,8 +4,10 @@
 
 @section('title', 'QA Practice Lab - Courses')
 
+@section('body-class', 'practice-page')
+
 @section('body')
-<nav class="navbar navbar-expand bg-dark navbar-dark px-3">
+<nav class="navbar navbar-expand navbar-dark frame-nav px-3">
     <span class="navbar-brand">Course Catalogue</span>
     <ul class="navbar-nav">
         <li class="nav-item"><a class="nav-link" href="#courses">Courses</a></li>
@@ -22,7 +24,7 @@
                     <div class="card-body">
                         <h3 class="h6 card-title">{{ $course }}</h3>
                         <p class="text-secondary small mb-1">{{ $instructor }}</p>
-                        <span class="badge text-bg-success price">${{ $price }}</span>
+                        <span class="badge price">${{ $price }}</span>
                     </div>
                 </div>
             </div>

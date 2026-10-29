@@ -2,6 +2,8 @@
 
 @section('title', 'Practice Page')
 
+@section('body-class', 'practice-page')
+
 @push('head')
 <link rel="stylesheet" href="https://code.jquery.com/ui/1.13.2/themes/base/jquery-ui.css">
 @endpush
@@ -10,6 +12,7 @@
 <header class="practice-header">
     <div class="container d-flex flex-wrap align-items-center justify-content-between gap-2">
         <a href="{{ url('/') }}" class="fw-bold text-decoration-none fs-5">QA Practice Lab</a>
+        <a href="{{ url('/practice/window?from=blink') }}" class="blinkingText" target="_blank">Free Access to Interview Questions, Resume Help &amp; Study Material</a>
         <nav class="d-flex gap-2">
             <a href="{{ url('/') }}" class="btn btn-primary btn-sm">Home</a>
             <a href="{{ url('/practice') }}" class="btn btn-primary btn-sm">Practice</a>
