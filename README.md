@@ -128,7 +128,7 @@ vendor/bin/pint --dirty    # format PHP before committing
 ## Deploying to Vercel
 
 > **Live:** https://www.qapracticelabs.com (the bare `qapracticelabs.com` redirects there with a 308; the original
-> https://qa-practice-lab-six.vercel.app still serves the same deployment), backed by the TiDB Cloud Starter instance `qa-practice-lab`
+> `qa-practice-lab-six.vercel.app` temporarily 307-redirects there too), backed by the TiDB Cloud Starter instance `qa-practice-lab`
 > (Singapore, $0 spending limit), database `qa_practice_lab`. Its credentials are Vercel environment variables
 > (`DB_*`), with a local git-ignored copy in `.env.tidb`. TiDB's own Vercel integration also works: the app falls
 > back to the `TIDB_*` variables it injects.
