@@ -1,7 +1,7 @@
 # QA Practice Lab
 
 Always-on practice applications for UI and API test automation (Selenium, Playwright, Cypress, RestAssured, Postman…).
-Built with Laravel 13 + MySQL, deployable to Vercel.
+Built with Laravel 13 + MySQL, deployable to Vercel. **Live at https://www.qapracticelabs.com**
 
 | Module | URL | What learners practise |
 |---|---|---|
@@ -127,7 +127,8 @@ vendor/bin/pint --dirty    # format PHP before committing
 
 ## Deploying to Vercel
 
-> **Live:** https://qa-practice-lab-six.vercel.app, backed by the TiDB Cloud Starter instance `qa-practice-lab`
+> **Live:** https://www.qapracticelabs.com (the bare `qapracticelabs.com` redirects there with a 308; the original
+> https://qa-practice-lab-six.vercel.app still serves the same deployment), backed by the TiDB Cloud Starter instance `qa-practice-lab`
 > (Singapore, $0 spending limit), database `qa_practice_lab`. Its credentials are Vercel environment variables
 > (`DB_*`), with a local git-ignored copy in `.env.tidb`. TiDB's own Vercel integration also works: the app falls
 > back to the `TIDB_*` variables it injects.
