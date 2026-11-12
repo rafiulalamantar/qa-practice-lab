@@ -52,7 +52,11 @@ Route::prefix('tickets')->group(function () {
     Route::view('/bookings/{id}', 'tickets.booking-details');
     Route::view('/admin/events', 'tickets.admin.events');
     Route::view('/admin/bookings', 'tickets.admin.bookings');
+    Route::view('/referrals', 'tickets.referrals');
     Route::view('/api-docs', 'tickets.api-docs');
+
+    // Any other /tickets URL gets TicketTrail's own 404 page.
+    Route::get('/{path}', fn () => response()->view('tickets.not-found', [], 404))->where('path', '.*');
 });
 
 Route::view('/docs/api', 'docs.api');

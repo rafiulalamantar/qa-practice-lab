@@ -1,4 +1,4 @@
-@extends('tickets.layout', ['page' => 'bookings'])
+@extends('tickets.layout', ['page' => 'bookings', 'sidebar' => true])
 
 @section('nav', true)
 @section('tt-title', 'My Bookings')
@@ -12,6 +12,7 @@
             <p class="text-secondary mb-0">View and manage all your ticket bookings &middot; <strong class="text-dark" id="bookings-total" data-testid="bookings-total">0</strong> total</p>
         </div>
         <div class="text-end">
+            <button class="btn btn-outline-secondary btn-sm me-1" type="button" id="refresh-bookings-btn" data-testid="refresh-btn" title="Refresh (r)"><i class="bi bi-arrow-clockwise me-1"></i> Refresh</button>
             <button class="btn btn-outline-danger btn-sm" type="button" id="clear-bookings-btn" data-testid="clear-bookings-btn"><i class="bi bi-trash3 me-1"></i> Clear all bookings</button>
             <p class="small text-secondary mb-0 mt-1">Do this often for clean test data.</p>
         </div>
@@ -25,9 +26,10 @@
         <p class="text-secondary">Book an event and it will show up here.</p>
         <a class="btn btn-tt" href="{{ url('/tickets/events') }}">Browse Events</a>
     </div>
-    <div class="tt-empty" id="bookings-error" hidden>
+    <div class="tt-empty" id="bookings-error" data-testid="bookings-error" hidden>
         <div class="tt-empty-icon" style="background:#fdecec;color:#e5484d"><i class="bi bi-wifi-off"></i></div>
         <h2 class="h5">Couldn't load bookings</h2>
+        <p class="text-secondary">Nothing was lost. Check your connection and try again.</p>
         <button class="btn btn-outline-secondary" type="button" data-retry><i class="bi bi-arrow-repeat me-1"></i> Retry</button>
     </div>
 

@@ -1,4 +1,4 @@
-@extends('tickets.layout', ['page' => 'admin-events'])
+@extends('tickets.layout', ['page' => 'admin-events', 'sidebar' => true])
 
 @section('nav', true)
 @section('tt-title', 'Manage Events')
@@ -21,17 +21,26 @@
     <div class="row g-4">
         <div class="col-lg-4 col-xxl-3">
             <form class="tt-card tt-form-card" id="admin-event-form" data-testid="admin-event-form" novalidate>
-                <h2 class="h5 mb-1" id="event-form-title">Add New Event</h2>
-                <p class="small text-secondary mb-4">Fields marked <span class="text-danger">*</span> are required.</p>
+                <div class="d-flex justify-content-between align-items-start gap-2">
+                    <h2 class="h5 mb-1" id="event-form-title">Add New Event</h2>
+                    <span class="tt-autosave" id="event-autosave" data-testid="autosave-status" data-state="idle" aria-live="polite"></span>
+                </div>
+                <p class="small text-secondary mb-3">Fields marked <span class="text-danger">*</span> are required. Your draft is saved as you type.</p>
+                <div class="tt-draft mb-3" id="event-draft" data-testid="draft-banner" hidden>
+                    <i class="bi bi-clock-history" aria-hidden="true"></i>
+                    <span class="flex-grow-1">Unsaved draft from <strong data-draft-time></strong>.</span>
+                    <button type="button" class="btn btn-sm btn-tt-ghost" data-draft-restore data-testid="restore-draft-btn">Restore</button>
+                    <button type="button" class="btn btn-sm btn-link text-secondary" data-draft-discard data-testid="discard-draft-btn">Discard</button>
+                </div>
                 <div class="mb-3">
                     <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
                     <input id="title" name="title" class="form-control" placeholder="Event title" data-testid="event-title-input">
-                    <div class="invalid-feedback" data-error-for="title"></div>
+                    <div class="invalid-feedback" data-error-for="title" id="title-error"></div>
                 </div>
                 <div class="mb-3">
                     <label for="description" class="form-label">Description</label>
                     <textarea id="description" name="description" class="form-control" rows="3" placeholder="Describe the event…" data-testid="event-description-input"></textarea>
-                    <div class="invalid-feedback" data-error-for="description"></div>
+                    <div class="invalid-feedback" data-error-for="description" id="description-error"></div>
                 </div>
                 <div class="row g-2">
                     <div class="col-6 mb-3">
@@ -42,40 +51,40 @@
                                 <option value="{{ $category }}">{{ $category }}</option>
                             @endforeach
                         </select>
-                        <div class="invalid-feedback" data-error-for="category"></div>
+                        <div class="invalid-feedback" data-error-for="category" id="category-error"></div>
                     </div>
                     <div class="col-6 mb-3">
                         <label for="city" class="form-label">City <span class="text-danger">*</span></label>
                         <input id="city" name="city" class="form-control" placeholder="e.g. Dhaka" data-testid="event-city-input">
-                        <div class="invalid-feedback" data-error-for="city"></div>
+                        <div class="invalid-feedback" data-error-for="city" id="city-error"></div>
                     </div>
                 </div>
                 <div class="mb-3">
                     <label for="venue" class="form-label">Venue <span class="text-danger">*</span></label>
                     <input id="venue" name="venue" class="form-control" placeholder="Venue name &amp; address" data-testid="event-venue-input">
-                    <div class="invalid-feedback" data-error-for="venue"></div>
+                    <div class="invalid-feedback" data-error-for="venue" id="venue-error"></div>
                 </div>
                 <div class="mb-3">
                     <label for="eventDate" class="form-label">Date &amp; time <span class="text-danger">*</span></label>
                     <input id="eventDate" name="eventDate" type="datetime-local" class="form-control" data-testid="event-date-input">
-                    <div class="invalid-feedback" data-error-for="eventDate"></div>
+                    <div class="invalid-feedback" data-error-for="eventDate" id="eventDate-error"></div>
                 </div>
                 <div class="row g-2">
                     <div class="col-6 mb-3">
                         <label for="price" class="form-label">Price (৳) <span class="text-danger">*</span></label>
                         <input id="price" name="price" type="number" min="0" step="0.01" class="form-control" placeholder="0.00" data-testid="event-price-input">
-                        <div class="invalid-feedback" data-error-for="price"></div>
+                        <div class="invalid-feedback" data-error-for="price" id="price-error"></div>
                     </div>
                     <div class="col-6 mb-3">
                         <label for="totalSeats" class="form-label">Total seats <span class="text-danger">*</span></label>
                         <input id="totalSeats" name="totalSeats" type="number" min="1" step="1" class="form-control" placeholder="e.g. 500" data-testid="event-seats-input">
-                        <div class="invalid-feedback" data-error-for="totalSeats"></div>
+                        <div class="invalid-feedback" data-error-for="totalSeats" id="totalSeats-error"></div>
                     </div>
                 </div>
                 <div class="mb-4">
                     <label for="imageUrl" class="form-label">Image URL</label>
                     <input id="imageUrl" name="imageUrl" type="url" class="form-control" placeholder="https://…" data-testid="event-image-input">
-                    <div class="invalid-feedback" data-error-for="imageUrl"></div>
+                    <div class="invalid-feedback" data-error-for="imageUrl" id="imageUrl-error"></div>
                 </div>
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-tt flex-grow-1" id="add-event-btn" data-testid="add-event-btn">Add Event</button>
@@ -86,17 +95,27 @@
 
         <div class="col-lg-8 col-xxl-9">
             <div class="tt-card p-0 overflow-hidden">
-                <div class="d-flex justify-content-between align-items-center px-4 py-3 border-bottom">
-                    <h2 class="h5 mb-0">All Events</h2>
-                    <span class="tt-chip" style="background:var(--tt-bg)" id="admin-events-count" data-testid="admin-events-count"></span>
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-4 py-3 border-bottom">
+                    <div class="d-flex align-items-center gap-2">
+                        <h2 class="h5 mb-0">All Events</h2>
+                        <span class="tt-chip" style="background:var(--tt-bg)" id="admin-events-count" data-testid="admin-events-count"></span>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <label class="small text-secondary text-nowrap" for="events-page-size">Rows</label>
+                        <select class="form-select form-select-sm tt-page-size" id="events-page-size" data-testid="page-size-select">
+                            <option value="5">5</option><option value="10">10</option><option value="25">25</option>
+                        </select>
+                        <button class="btn btn-sm btn-outline-secondary text-nowrap" type="button" id="refresh-events-btn" data-testid="refresh-btn" title="Refresh (r)"><i class="bi bi-arrow-clockwise me-1"></i> Refresh</button>
+                    </div>
                 </div>
                 <div class="table-responsive">
                     <table class="table align-middle mb-0 tt-table" id="admin-events-table" data-testid="admin-events-table">
-                        <thead><tr><th scope="col">Event</th><th scope="col">Date</th><th scope="col">Price</th><th scope="col">Seats</th><th scope="col" class="text-end">Actions</th></tr></thead>
+                        <thead><tr><th scope="col" data-sort="title">Event</th><th scope="col" data-sort="date">Date</th><th scope="col" data-sort="price">Price</th><th scope="col" data-sort="seats">Seats</th><th scope="col" class="text-end">Actions</th></tr></thead>
                         <tbody id="admin-events-body"></tbody>
                     </table>
                 </div>
-                <div class="tt-empty" id="admin-events-empty" hidden><div class="tt-empty-icon"><i class="bi bi-calendar-x"></i></div><h3 class="h6">No events yet</h3></div>
+                <div class="tt-empty" id="admin-events-empty" hidden><div class="tt-empty-icon"><i class="bi bi-calendar-x"></i></div><h3 class="h6">No events yet</h3><p class="small text-secondary mb-0">Use the form to add your first event.</p></div>
+                <div class="tt-empty" id="admin-events-error" data-testid="table-error" hidden><div class="tt-empty-icon" style="background:#fdecec;color:#e5484d"><i class="bi bi-wifi-off"></i></div><h3 class="h6">Couldn't load events</h3><button class="btn btn-sm btn-outline-secondary" type="button" data-retry><i class="bi bi-arrow-repeat me-1"></i> Retry</button></div>
                 <nav class="tt-pager p-3 border-top" id="admin-events-pager" aria-label="Events pages" hidden>
                     <button class="btn btn-outline-secondary btn-sm" type="button" data-page-prev data-testid="prev-page-btn"><i class="bi bi-arrow-left me-1"></i> Prev</button>
                     <span class="small text-secondary" data-page-label data-testid="page-label"></span>

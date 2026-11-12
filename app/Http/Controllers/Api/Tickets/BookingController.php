@@ -77,6 +77,35 @@ class BookingController extends TicketsController
         return $this->success(['message' => "{$deleted} booking(s) cleared", 'deleted' => $deleted]);
     }
 
+    /**
+     * Cancel several of the user's bookings at once. Ids that are not the
+     * user's (or no longer exist) are reported back instead of failing.
+     */
+    public function bulkCancel(Request $request): JsonResponse
+    {
+        $ids = $request->validate([
+            'ids' => ['required', 'array', 'min:1', 'max:100'],
+            'ids.*' => ['integer', 'min:1', 'distinct'],
+        ], [
+            'ids.required' => 'ids must be a non-empty array of booking ids',
+            'ids.array' => 'ids must be a non-empty array of booking ids',
+            'ids.min' => 'ids must be a non-empty array of booking ids',
+            'ids.max' => 'You can cancel at most 100 bookings at once',
+            'ids.*.integer' => 'Each booking id must be an integer',
+            'ids.*.min' => 'Each booking id must be a positive integer',
+            'ids.*.distinct' => 'Booking ids must be unique',
+        ])['ids'];
+
+        $ownIds = $request->user()->bookings()->whereIn('id', $ids)->pluck('id')->all();
+        $cancelled = $request->user()->bookings()->whereIn('id', $ownIds)->delete();
+
+        return $this->success([
+            'message' => "{$cancelled} booking(s) cancelled",
+            'cancelled' => $cancelled,
+            'notFound' => array_values(array_diff(array_map('intval', $ids), $ownIds)),
+        ]);
+    }
+
     private function findOwnBooking(User $user, string $id): Booking
     {
         $booking = ctype_digit($id) ? $user->bookings()->find((int) $id) : null;

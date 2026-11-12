@@ -7,6 +7,18 @@
 <main class="container" style="max-width: 980px">
     <div class="pt-4"><a href="{{ url('/tickets/bookings') }}" class="tt-link-arrow" data-testid="back-to-bookings"><i class="bi bi-arrow-left"></i> Back to My Bookings</a></div>
 
+    <div class="tt-card mt-4 tt-detail-skeleton" id="booking-skeleton" data-testid="detail-skeleton" aria-busy="true" aria-label="Loading booking">
+        <div class="tt-skel-block" style="height:150px;border-radius:18px 18px 0 0"></div>
+        <div class="p-4 d-grid gap-3"><span class="tt-skel-line" style="width:60%"></span><span class="tt-skel-line" style="width:85%"></span><span class="tt-skel-line" style="width:40%"></span></div>
+    </div>
+
+    <div class="tt-card tt-empty mt-4" id="booking-load-error" data-testid="detail-error" hidden>
+        <div class="tt-empty-icon" style="background:#fdecec;color:#e5484d"><i class="bi bi-wifi-off"></i></div>
+        <h1 class="h4">Couldn't load this booking</h1>
+        <p class="text-secondary">This is usually a network hiccup. Your booking is safe.</p>
+        <button class="btn btn-outline-secondary" type="button" data-retry data-testid="detail-retry-btn"><i class="bi bi-arrow-repeat me-1"></i> Retry</button>
+    </div>
+
     <div class="tt-card tt-empty mt-4" id="booking-not-found" data-testid="booking-not-found" hidden>
         <div class="tt-empty-icon"><i class="bi bi-ticket-perforated"></i></div>
         <h1 class="h4">Booking not found</h1>

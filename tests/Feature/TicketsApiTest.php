@@ -191,11 +191,118 @@ class TicketsApiTest extends TestCase
         $this->deleteJson('/api/tickets/bookings', [], $headers)->assertOk()->assertJson(['deleted' => 9]);
     }
 
+    public function test_events_list_filters_by_price_date_and_seats_left_and_sorts(): void
+    {
+        $user = User::factory()->create();
+        $headers = $this->login($user);
+        $cheap = Event::factory()->for($user)->create(['title' => 'Cheap Show', 'city' => 'Rangpur', 'price' => 100, 'event_date' => '2030-03-10 18:00:00']);
+        $mid = Event::factory()->for($user)->create(['title' => 'Mid Show', 'city' => 'Rangpur', 'price' => 500, 'event_date' => '2030-03-20 18:00:00', 'total_seats' => 2]);
+        $dear = Event::factory()->for($user)->create(['title' => 'Dear Show', 'city' => 'Rangpur', 'price' => 900, 'event_date' => '2030-04-05 18:00:00']);
+        Booking::factory()->for($user)->create(['event_id' => $mid->id, 'quantity' => 2]);
+
+        $titles = fn (string $query) => $this->getJson("/api/tickets/events?city=Rangpur&{$query}", $headers)->assertOk()->json('data.*.title');
+
+        $this->assertSame(['Cheap Show', 'Mid Show'], $titles('maxPrice=500'));
+        $this->assertSame(['Mid Show', 'Dear Show'], $titles('minPrice=200'));
+        $this->assertSame(['Mid Show', 'Dear Show'], $titles('from=2030-03-20&to=2030-04-05'));
+        $this->assertSame(['Cheap Show', 'Dear Show'], $titles('availableOnly=true'));
+        $this->assertSame(['Dear Show', 'Mid Show', 'Cheap Show'], $titles('sort=-price'));
+        $this->assertSame(['Dear Show', 'Mid Show', 'Cheap Show'], $titles('sort=-date'));
+        $this->assertSame(['Cheap Show', 'Dear Show', 'Mid Show'], $titles('sort=title'));
+    }
+
+    public function test_events_date_filter_uses_the_callers_local_day_when_given_an_offset(): void
+    {
+        $user = User::factory()->create();
+        $headers = $this->login($user);
+        // 19:00 UTC on 6 March is 01:00 on 7 March in Dhaka (UTC+6).
+        Event::factory()->for($user)->create(['title' => 'Late Gig', 'city' => 'Rangpur', 'event_date' => '2030-03-06 19:00:00']);
+
+        $titles = fn (string $query) => $this->getJson("/api/tickets/events?city=Rangpur&{$query}", $headers)->assertOk()->json('data.*.title');
+
+        $this->assertSame(['Late Gig'], $titles('from='.urlencode('2030-03-07T00:00:00+06:00').'&to='.urlencode('2030-03-07T23:59:59+06:00')));
+        $this->assertSame([], $titles('from='.urlencode('2030-03-06T00:00:00+06:00').'&to='.urlencode('2030-03-06T23:59:59+06:00')));
+        $this->assertSame(['Late Gig'], $titles('from=2030-03-06&to=2030-03-06'));
+    }
+
+    public function test_events_list_rejects_contradictory_filters_with_400(): void
+    {
+        $headers = $this->login(User::factory()->create());
+
+        $this->getJson('/api/tickets/events?minPrice=500&maxPrice=100&from=2030-05-01&to=2030-04-01&availableOnly=maybe&sort=random', $headers)
+            ->assertStatus(400)
+            ->assertJsonPath('details', [
+                ['field' => 'maxPrice', 'message' => 'maxPrice must be greater than or equal to minPrice'],
+                ['field' => 'to', 'message' => 'to must be on or after from'],
+                ['field' => 'availableOnly', 'message' => 'availableOnly must be true or false'],
+                ['field' => 'sort', 'message' => 'sort must be one of: date, -date, price, -price, title'],
+            ]);
+    }
+
+    public function test_events_list_names_the_parameter_in_malformed_filter_errors(): void
+    {
+        $headers = $this->login(User::factory()->create());
+
+        $this->getJson('/api/tickets/events?minPrice=cheap&maxPrice=1e309&from=someday&to=later', $headers)
+            ->assertStatus(400)
+            ->assertJsonPath('details', [
+                ['field' => 'minPrice', 'message' => 'minPrice must be a number'],
+                ['field' => 'maxPrice', 'message' => 'maxPrice must be 1000000 or less'],
+                ['field' => 'from', 'message' => 'from must be a valid date, e.g. 2027-03-07'],
+                ['field' => 'to', 'message' => 'to must be a valid date, e.g. 2027-03-07'],
+            ]);
+        $this->getJson('/api/tickets/events?minPrice=-1', $headers)->assertStatus(400)
+            ->assertJsonPath('details', [['field' => 'minPrice', 'message' => 'minPrice must be 0 or more']]);
+    }
+
+    public function test_bulk_cancel_removes_own_bookings_and_reports_ids_it_could_not_cancel(): void
+    {
+        $user = User::factory()->create();
+        $headers = $this->login($user);
+        [$first, $second, $kept] = Booking::factory()->for($user)->count(3)->create()->all();
+        $theirs = Booking::factory()->create();
+
+        $this->postJson('/api/tickets/bookings/bulk-cancel', ['ids' => [$first->id, $second->id, $theirs->id, 99999]], $headers)
+            ->assertOk()
+            ->assertExactJson(['success' => true, 'message' => '2 booking(s) cancelled', 'cancelled' => 2, 'notFound' => [$theirs->id, 99999]]);
+
+        $this->assertModelMissing($first);
+        $this->assertModelMissing($second);
+        $this->assertModelExists($kept);
+        $this->assertModelExists($theirs);
+    }
+
+    public function test_bulk_cancel_requires_a_list_of_unique_integer_ids_with_400(): void
+    {
+        $headers = $this->login(User::factory()->create());
+
+        $this->postJson('/api/tickets/bookings/bulk-cancel', [], $headers)->assertStatus(400)
+            ->assertJsonPath('details', [['field' => 'ids', 'message' => 'ids must be a non-empty array of booking ids']]);
+        $this->postJson('/api/tickets/bookings/bulk-cancel', ['ids' => ['abc', 5, 5]], $headers)->assertStatus(400)
+            ->assertJsonPath('details.*.message', ['Each booking id must be an integer', 'Booking ids must be unique', 'Booking ids must be unique']);
+        $this->postJson('/api/tickets/bookings/bulk-cancel', ['ids' => [0, -3]], $headers)->assertStatus(400)
+            ->assertJsonPath('details.*.message', ['Each booking id must be a positive integer', 'Each booking id must be a positive integer']);
+        $this->app['auth']->forgetGuards();
+        $this->postJson('/api/tickets/bookings/bulk-cancel', ['ids' => [1]])->assertUnauthorized();
+    }
+
+    public function test_bulk_cancel_answers_405_to_other_methods_while_booking_ids_still_resolve(): void
+    {
+        $user = User::factory()->create();
+        $headers = $this->login($user);
+        $booking = Booking::factory()->for($user)->create();
+
+        $this->getJson('/api/tickets/bookings/bulk-cancel', $headers)->assertStatus(405);
+        $this->deleteJson('/api/tickets/bookings/bulk-cancel', [], $headers)->assertStatus(405);
+        $this->getJson('/api/tickets/bookings/'.$booking->id, $headers)->assertOk()->assertJsonPath('data.id', $booking->id);
+        $this->getJson('/api/tickets/bookings/abc', $headers)->assertNotFound();
+    }
+
     public function test_public_meta_endpoints(): void
     {
         $this->getJson('/api/tickets/health')->assertOk()->assertJson(['status' => 'ok', 'dbStatus' => 'connected']);
         $this->getJson('/api/tickets/config')->assertOk()->assertJson(['maxCustomEvents' => 6, 'maxBookings' => 9]);
         $this->getJson('/api/tickets/openapi.json')->assertOk()->assertJsonPath('info.title', 'TicketTrail API')
-            ->assertJsonStructure(['paths' => ['/bookings/{id}', '/events']]);
+            ->assertJsonStructure(['paths' => ['/bookings/{id}', '/bookings/bulk-cancel', '/events']]);
     }
 }

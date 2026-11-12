@@ -27,7 +27,7 @@
                 <label for="search" class="form-label small">Search</label>
                 <div class="tt-input-icon">
                     <i class="bi bi-search"></i>
-                    <input id="search" name="search" type="search" class="form-control" placeholder="Search events, venues…" data-testid="search-input">
+                    <input id="search" name="search" type="search" class="form-control" placeholder="Search events, venues…" data-testid="search-input" aria-describedby="search-status">
                 </div>
             </div>
             <div class="col-6 col-lg-3">
@@ -53,7 +53,54 @@
                 <button type="reset" class="btn btn-outline-secondary w-100" style="height:46px" data-testid="clear-filters-btn" id="clear-filters-btn"><i class="bi bi-x-circle me-1"></i> Clear filters</button>
             </div>
         </div>
+
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-2">
+            <span class="tt-search-status" id="search-status" data-testid="search-status" data-state="idle" aria-live="polite"></span>
+            <button class="btn btn-link btn-sm px-0 fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#advanced-filters" aria-expanded="false" aria-controls="advanced-filters" id="advanced-filters-btn" data-testid="advanced-filters-btn">
+                <i class="bi bi-sliders2 me-1"></i> More filters
+            </button>
+        </div>
+
+        <div class="collapse" id="advanced-filters" data-testid="advanced-filters">
+            <div class="row g-2 align-items-end pt-2 mt-1 border-top">
+                <div class="col-6 col-lg-2">
+                    <label for="minPrice" class="form-label small">Min price (৳)</label>
+                    <input id="minPrice" name="minPrice" type="number" min="0" step="50" inputmode="numeric" class="form-control" placeholder="0" data-testid="min-price-filter">
+                </div>
+                <div class="col-6 col-lg-2">
+                    <label for="maxPrice" class="form-label small">Max price (৳)</label>
+                    <input id="maxPrice" name="maxPrice" type="number" min="0" step="50" inputmode="numeric" class="form-control" placeholder="Any" data-testid="max-price-filter">
+                </div>
+                <div class="col-6 col-lg-2">
+                    <label for="from" class="form-label small">From</label>
+                    <input id="from" name="from" type="date" class="form-control" data-testid="from-date-filter">
+                </div>
+                <div class="col-6 col-lg-2">
+                    <label for="to" class="form-label small">To</label>
+                    <input id="to" name="to" type="date" class="form-control" data-testid="to-date-filter">
+                </div>
+                <div class="col-6 col-lg-2">
+                    <label for="sort" class="form-label small">Sort by</label>
+                    <select id="sort" name="sort" class="form-select" data-testid="sort-select">
+                        <option value="">Soonest first</option>
+                        <option value="-date">Latest first</option>
+                        <option value="price">Price: low to high</option>
+                        <option value="-price">Price: high to low</option>
+                        <option value="title">Name (A–Z)</option>
+                    </select>
+                </div>
+                <div class="col-6 col-lg-2">
+                    <div class="form-check form-switch tt-switch">
+                        <input class="form-check-input" type="checkbox" role="switch" id="availableOnly" name="availableOnly" value="1" data-testid="available-only-filter">
+                        <label class="form-check-label small fw-semibold" for="availableOnly">Hide sold out</label>
+                    </div>
+                </div>
+                <div class="col-12"><div class="small text-danger fw-semibold" id="filters-error" data-testid="filters-error" role="alert"></div></div>
+            </div>
+        </div>
     </form>
+
+    <div class="tt-active-filters mb-3" id="active-filters" data-testid="active-filters" aria-label="Active filters" hidden></div>
 
     <div class="tt-cat-chips mb-4" id="category-chips" data-testid="category-chips" role="group" aria-label="Quick category filter">
         <button type="button" class="tt-cat-chip tt-cat" data-chip="" aria-pressed="true"><i class="bi bi-grid-3x3-gap"></i> All</button>
@@ -71,10 +118,12 @@
         <div class="tt-empty-icon"><i class="bi bi-search"></i></div>
         <h2 class="h5">No events found</h2>
         <p class="text-secondary">Try a different search or clear the filters.</p>
+        <button class="btn btn-tt" type="button" id="empty-clear-filters" data-testid="empty-clear-filters"><i class="bi bi-x-circle me-1"></i> Clear filters</button>
     </div>
     <div class="tt-empty" id="events-error" data-testid="events-error" hidden>
         <div class="tt-empty-icon" style="background:#fdecec;color:#e5484d"><i class="bi bi-wifi-off"></i></div>
         <h2 class="h5">Couldn't load events</h2>
+        <p class="text-secondary">Your filters are kept. We'll retry automatically when you're back online.</p>
         <button class="btn btn-outline-secondary" type="button" data-retry><i class="bi bi-arrow-repeat me-1"></i> Retry</button>
     </div>
 

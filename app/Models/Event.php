@@ -48,6 +48,15 @@ class Event extends Model
             ->withSum(['bookings as booked_seats' => fn (Builder $q) => $q->where('user_id', $user->id)], 'quantity');
     }
 
+    /** Only events where this user still has at least one seat left to book. */
+    public function scopeWithSeatsLeftFor(Builder $query, User $user): Builder
+    {
+        return $query->whereRaw(
+            'total_seats > (SELECT COALESCE(SUM(quantity), 0) FROM bookings WHERE bookings.event_id = events.id AND bookings.user_id = ?)',
+            [$user->id],
+        );
+    }
+
     /** Case-insensitive match on title, description or venue. */
     public function scopeSearch(Builder $query, string $term): Builder
     {

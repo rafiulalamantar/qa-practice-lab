@@ -8,6 +8,7 @@ use App\Models\Event;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -18,22 +19,77 @@ use Illuminate\Validation\ValidationException;
  */
 class EventController extends TicketsController
 {
+    /**
+     * Allowed `sort` values for the events list, as [column, direction].
+     *
+     * @var array<string, array{0: string, 1: string}>
+     */
+    public const SORTS = [
+        'date' => ['event_date', 'asc'],
+        '-date' => ['event_date', 'desc'],
+        'price' => ['price', 'asc'],
+        '-price' => ['price', 'desc'],
+        'title' => ['title', 'asc'],
+    ];
+
     public function index(Request $request): JsonResponse
     {
         $filters = $request->validate([
             'category' => ['nullable', Rule::in(Event::CATEGORIES)],
             'city' => ['nullable', 'string', 'max:80'],
             'search' => ['nullable', 'string', 'max:100'],
+            'minPrice' => ['nullable', 'numeric', 'min:0', 'max:1000000'],
+            'maxPrice' => ['nullable', 'numeric', 'min:0', 'max:1000000', Rule::when($request->filled('minPrice'), 'gte:minPrice')],
+            'from' => ['nullable', 'date'],
+            'to' => ['nullable', 'date', Rule::when($request->filled('from'), 'after_or_equal:from')],
+            'availableOnly' => ['nullable', 'in:0,1,true,false'],
+            'sort' => ['nullable', Rule::in(array_keys(self::SORTS))],
             ...$this->paginationRules(),
+        ], [
+            'minPrice.numeric' => 'minPrice must be a number',
+            'minPrice.min' => 'minPrice must be 0 or more',
+            'minPrice.max' => 'minPrice must be 1000000 or less',
+            'maxPrice.numeric' => 'maxPrice must be a number',
+            'maxPrice.min' => 'maxPrice must be 0 or more',
+            'maxPrice.max' => 'maxPrice must be 1000000 or less',
+            'from.date' => 'from must be a valid date, e.g. 2027-03-07',
+            'to.date' => 'to must be a valid date, e.g. 2027-03-07',
+            'maxPrice.gte' => 'maxPrice must be greater than or equal to minPrice',
+            'to.after_or_equal' => 'to must be on or after from',
+            'availableOnly.in' => 'availableOnly must be true or false',
+            'sort.in' => 'sort must be one of: '.implode(', ', array_keys(self::SORTS)),
         ]);
+        $user = $request->user();
+        [$sortColumn, $sortDirection] = self::SORTS[$filters['sort'] ?? 'date'];
 
-        $query = Event::visibleTo($request->user())
+        $query = Event::visibleTo($user)
             ->when($filters['category'] ?? null, fn ($q, $category) => $q->where('category', $category))
             ->when($filters['city'] ?? null, fn ($q, $city) => $q->whereRaw('LOWER(city) = ?', [mb_strtolower(trim($city))]))
             ->when($filters['search'] ?? null, fn ($q, $term) => $q->search($term))
-            ->orderBy('event_date')->orderBy('id');
+            ->when(isset($filters['minPrice']), fn ($q) => $q->where('price', '>=', $filters['minPrice']))
+            ->when(isset($filters['maxPrice']), fn ($q) => $q->where('price', '<=', $filters['maxPrice']))
+            ->when($filters['from'] ?? null, fn ($q, $from) => $q->where('event_date', '>=', $this->dateBound($from, endOfDay: false)))
+            ->when($filters['to'] ?? null, fn ($q, $to) => $q->where('event_date', '<=', $this->dateBound($to, endOfDay: true)))
+            ->when($request->boolean('availableOnly'), fn ($q) => $q->withSeatsLeftFor($user))
+            ->orderBy($sortColumn, $sortDirection)->orderBy('id');
 
         return $this->paginated($query, $filters, fn (Event $event) => $event->toApi());
+    }
+
+    /**
+     * A plain date (2027-03-07) covers that whole day in UTC. A date-time with
+     * an offset (2027-03-07T00:00:00+06:00) is used as the exact instant, so
+     * the UI can filter by the visitor's own calendar day.
+     */
+    private function dateBound(string $value, bool $endOfDay): Carbon
+    {
+        $moment = Carbon::parse($value)->utc();
+
+        if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) {
+            return $endOfDay ? $moment->endOfDay() : $moment->startOfDay();
+        }
+
+        return $moment;
     }
 
     public function show(Request $request, string $id): JsonResponse

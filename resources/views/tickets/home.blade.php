@@ -67,6 +67,35 @@
 </div>
 
 <main class="container">
+    <section class="tt-card tt-onboard mt-4" id="onboarding-card" data-testid="onboarding-card" aria-labelledby="onboarding-card-title" hidden>
+        <div class="tt-onboard-ring" aria-hidden="true"><svg viewBox="0 0 36 36"><circle cx="18" cy="18" r="15.5"/><circle cx="18" cy="18" r="15.5" id="onboarding-ring" pathLength="100"/></svg><strong id="onboarding-percent">0%</strong></div>
+        <div class="flex-grow-1">
+            <h2 class="h5 mb-1" id="onboarding-card-title">Finish setting up TicketTrail</h2>
+            <ul class="tt-checklist" id="onboarding-checklist" data-testid="onboarding-checklist">
+                <li data-check="profile">Add your name</li>
+                <li data-check="city">Choose your city</li>
+                <li data-check="interests">Pick your interests</li>
+                <li data-check="booking">Make your first booking</li>
+            </ul>
+        </div>
+        <div class="d-flex flex-wrap gap-2 align-items-center">
+            <button class="btn btn-tt" type="button" data-open-onboarding data-testid="onboarding-start-btn">Continue setup</button>
+            <button class="btn btn-link text-secondary" type="button" id="onboarding-dismiss" data-testid="onboarding-dismiss-btn">Dismiss</button>
+        </div>
+    </section>
+
+    <section class="tt-section" id="for-you-section" data-testid="for-you-section" hidden>
+        <div class="tt-section-head">
+            <div>
+                <span class="tt-eyebrow"><i class="bi bi-heart-fill"></i> For you</span>
+                <h2>Picked for you</h2>
+                <p class="text-secondary mb-0" id="for-you-reason"></p>
+            </div>
+            <button type="button" class="tt-link-arrow btn btn-link p-0" data-open-onboarding data-testid="edit-preferences-btn">Edit preferences <i class="bi bi-pencil"></i></button>
+        </div>
+        <div class="row g-4" id="for-you-events" data-testid="for-you-events"></div>
+    </section>
+
     <section class="tt-section">
         <div class="tt-section-head">
             <div>

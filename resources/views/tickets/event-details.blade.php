@@ -13,6 +13,23 @@
     </div>
 </div>
 
+<div class="container" id="event-skeleton" data-testid="detail-skeleton" aria-busy="true" aria-label="Loading event">
+    <div class="tt-skel-block mt-4" style="height:300px"></div>
+    <div class="row g-4 mt-1">
+        <div class="col-lg-7 d-grid gap-3"><span class="tt-skel-line" style="width:70%;height:22px"></span><span class="tt-skel-line" style="width:90%"></span><span class="tt-skel-line" style="width:80%"></span><span class="tt-skel-line" style="width:50%"></span></div>
+        <div class="col-lg-5"><div class="tt-skel-block" style="height:260px"></div></div>
+    </div>
+</div>
+
+<div class="container" id="event-load-error" data-testid="detail-error" hidden>
+    <div class="tt-empty">
+        <div class="tt-empty-icon" style="background:#fdecec;color:#e5484d"><i class="bi bi-wifi-off"></i></div>
+        <h1 class="h4">Couldn't load this event</h1>
+        <p class="text-secondary">Check your connection. We'll try again as soon as you're back online.</p>
+        <button class="btn btn-outline-secondary" type="button" data-retry data-testid="detail-retry-btn"><i class="bi bi-arrow-repeat me-1"></i> Retry</button>
+    </div>
+</div>
+
 <div id="event-detail" data-testid="event-detail" hidden>
     <section class="tt-event-hero">
         <img id="event-image" src="" alt="">
@@ -82,6 +99,13 @@
                     <div class="tt-refund-result is-ineligible mb-0" id="sold-out-msg" data-testid="sold-out-msg" hidden><i class="bi bi-x-octagon-fill"></i><span>This event is sold out.</span></div>
 
                     <form id="booking-form" data-testid="booking-form" novalidate>
+                        <div class="tt-draft" id="booking-draft" data-testid="draft-banner" hidden>
+                            <i class="bi bi-clock-history" aria-hidden="true"></i>
+                            <span class="flex-grow-1">You have unsaved details from <strong data-draft-time></strong>.</span>
+                            <button type="button" class="btn btn-sm btn-tt-ghost" data-draft-restore data-testid="restore-draft-btn">Restore</button>
+                            <button type="button" class="btn btn-sm btn-link text-secondary" data-draft-discard data-testid="discard-draft-btn">Discard</button>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-tt-ghost w-100 mb-3" id="use-profile-btn" data-testid="use-profile-btn" hidden><i class="bi bi-person-check me-1"></i> Use my saved details</button>
                         <div class="mb-3">
                             <span class="form-label d-block">Tickets</span>
                             <div class="d-flex align-items-center gap-3">
@@ -99,7 +123,7 @@
                             <div class="tt-input-icon">
                                 <i class="bi bi-person"></i>
                                 <input id="customerName" name="customerName" class="form-control" placeholder="Your full name" autocomplete="name" data-testid="customer-name">
-                                <div class="invalid-feedback" data-error-for="customerName"></div>
+                                <div class="invalid-feedback" data-error-for="customerName" id="customerName-error"></div>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -107,7 +131,7 @@
                             <div class="tt-input-icon">
                                 <i class="bi bi-envelope"></i>
                                 <input id="customerEmail" name="customerEmail" type="email" class="form-control" placeholder="you@email.com" autocomplete="email" data-testid="customer-email">
-                                <div class="invalid-feedback" data-error-for="customerEmail"></div>
+                                <div class="invalid-feedback" data-error-for="customerEmail" id="customerEmail-error"></div>
                             </div>
                         </div>
                         <div class="mb-3">
@@ -115,7 +139,7 @@
                             <div class="tt-input-icon">
                                 <i class="bi bi-telephone"></i>
                                 <input id="customerPhone" name="customerPhone" type="tel" class="form-control" placeholder="+880 1712-345678" autocomplete="tel" data-testid="customer-phone">
-                                <div class="invalid-feedback" data-error-for="customerPhone"></div>
+                                <div class="invalid-feedback" data-error-for="customerPhone" id="customerPhone-error"></div>
                             </div>
                         </div>
                         <div class="tt-total mb-3">
@@ -124,6 +148,7 @@
                         </div>
                         <button type="submit" class="btn btn-tt btn-lg w-100" id="confirm-booking-btn" data-testid="confirm-booking-btn">Confirm Booking</button>
                         <div class="tt-secure"><i class="bi bi-shield-lock"></i> Seats are held the moment you confirm</div>
+                        <div class="tt-autosave text-center mt-1" id="booking-autosave" data-testid="autosave-status" data-state="idle" aria-live="polite"></div>
                     </form>
 
                     <div id="booking-success" data-testid="booking-success" class="text-center" hidden>
@@ -146,6 +171,12 @@
                 </div>
             </div>
         </div>
+    </div>
+
+    {{-- Mobile: keep the price and the booking action within thumb reach. --}}
+    <div class="tt-mobile-cta" id="mobile-book-bar" data-testid="mobile-book-bar">
+        <div><small>From</small><strong id="mobile-price"></strong></div>
+        <a class="btn btn-tt" href="#booking-panel" id="mobile-book-btn" data-testid="mobile-book-btn">Book tickets</a>
     </div>
 </div>
 @endsection

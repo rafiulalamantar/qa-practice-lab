@@ -38,6 +38,7 @@ class PagesTest extends TestCase
             'tickets booking details' => ['/tickets/bookings/1', 'data-testid="check-refund-btn"'],
             'tickets admin events' => ['/tickets/admin/events', 'data-testid="admin-event-form"'],
             'tickets admin bookings' => ['/tickets/admin/bookings', 'data-testid="booking-event-filter"'],
+            'tickets referrals' => ['/tickets/referrals', 'data-testid="referral-link"'],
             'tickets api docs' => ['/tickets/api-docs', 'swagger-ui'],
         ];
     }
@@ -74,6 +75,13 @@ class PagesTest extends TestCase
 
         $this->get('/tickets/login')->assertOk()
             ->assertSeeInOrder(['var isAuthPage = true;', '</head>'], false);
+    }
+
+    public function test_unknown_tickets_url_shows_the_public_tickettrail_404_page(): void
+    {
+        $this->get('/tickets/no-such-page/really')->assertNotFound()
+            ->assertSee('data-testid="not-found-page"', false)
+            ->assertSee('var isPublicPage = true;', false);
     }
 
     public function test_license_is_served_as_plain_text(): void

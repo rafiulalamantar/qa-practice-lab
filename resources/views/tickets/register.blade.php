@@ -7,6 +7,7 @@
 <h2 class="h3 text-center mb-1">Create your account</h2>
 <p class="text-secondary text-center mb-2">Get your own private TicketTrail sandbox</p>
 <p class="small text-center text-secondary mb-4" id="account-expiry-note" data-testid="account-expiry-note"><i class="bi bi-clock-history me-1"></i>Accounts are deleted {{ config('practice.account_lifetime_days') }} days after registration. Register again after that.</p>
+<div class="tt-referral-banner" id="referral-banner" data-testid="referral-banner" role="status" hidden></div>
 <div class="alert alert-danger py-2 small" role="alert" id="register-error" data-testid="register-error" hidden></div>
 <form id="register-form" novalidate>
     <div class="mb-3">
@@ -14,7 +15,7 @@
         <div class="tt-input-icon">
             <i class="bi bi-envelope"></i>
             <input id="email" name="email" type="email" class="form-control" placeholder="you@email.com" autocomplete="email" data-testid="register-email">
-            <div class="invalid-feedback" data-error-for="email"></div>
+            <div class="invalid-feedback" data-error-for="email" id="email-error"></div>
         </div>
     </div>
     <div class="mb-3">
@@ -22,7 +23,7 @@
         <div class="tt-input-icon">
             <i class="bi bi-lock"></i>
             <input id="password" name="password" type="password" class="form-control" placeholder="Min 8 chars, uppercase, number &amp; symbol" autocomplete="new-password" data-testid="register-password">
-            <div class="invalid-feedback" data-error-for="password"></div>
+            <div class="invalid-feedback" data-error-for="password" id="password-error"></div>
         </div>
         <ul class="tt-pw-rules" id="password-rules" data-testid="password-rules">
             <li data-rule="length">At least 8 characters</li>
@@ -36,7 +37,7 @@
         <div class="tt-input-icon">
             <i class="bi bi-shield-check"></i>
             <input id="confirmPassword" name="confirmPassword" type="password" class="form-control" placeholder="Repeat your password" autocomplete="new-password" data-testid="register-confirm-password">
-            <div class="invalid-feedback" data-error-for="confirmPassword"></div>
+            <div class="invalid-feedback" data-error-for="confirmPassword" id="confirmPassword-error"></div>
         </div>
     </div>
     <button type="submit" class="btn btn-tt btn-lg w-100" id="register-btn" data-testid="register-btn">Create Account</button>

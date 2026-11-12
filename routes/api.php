@@ -69,8 +69,9 @@ Route::prefix('tickets')->middleware([NormalizeAuthorizationHeader::class, Chaos
         Route::get('/bookings', [BookingController::class, 'index']);
         Route::post('/bookings', [BookingController::class, 'store']);
         Route::delete('/bookings', [BookingController::class, 'clear']);
+        Route::post('/bookings/bulk-cancel', [BookingController::class, 'bulkCancel']);
         Route::get('/bookings/ref/{ref}', [BookingController::class, 'showByRef']);
-        Route::get('/bookings/{id}', [BookingController::class, 'show']);
-        Route::delete('/bookings/{id}', [BookingController::class, 'destroy']);
+        Route::get('/bookings/{id}', [BookingController::class, 'show'])->where('id', '(?!bulk-cancel$)[^/]+');
+        Route::delete('/bookings/{id}', [BookingController::class, 'destroy'])->where('id', '(?!bulk-cancel$)[^/]+');
     });
 });

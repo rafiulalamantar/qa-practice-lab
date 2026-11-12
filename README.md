@@ -8,8 +8,8 @@ Built with Laravel 13 + MySQL, deployable to Vercel. **Live at https://www.qapra
 | Automation Practice | `/practice` | radio, auto-suggest, dropdown, checkbox, windows, tabs, alerts/confirm, web tables, show/hide, hover menu, iframe |
 | ProtoShop | `/protoshop` | form validation, two-way binding, disabled controls, product grid, cart table, delayed country suggestions, T&C checkbox |
 | ShopSphere | `/client` | register / login / reset password, product filters, cart, coupons, checkout typeahead, order history, CSV download, auth errors |
-| TicketTrail | `/tickets` | event booking: search/category/city filters, pagination, seat stepper, sold-out states, confirm dialogs, a 4 s async refund check, event CRUD with read-only featured rows, booking table with event filter |
-| API reference | `/docs/api`, `/tickets/api-docs` | ShopSphere's 17 endpoints under `/api/ecom`; TicketTrail's 16 under `/api/tickets` (Swagger UI, `openapi.json` imports into Postman) |
+| TicketTrail | `/tickets` | event booking: search/category/city filters, pagination, seat stepper, sold-out states, confirm dialogs, a 4 s async refund check, event CRUD with read-only featured rows, booking table with event filter. Plus 20 SaaS UX patterns to test: optimistic updates, skeletons, command palette (Ctrl/⌘ K), persistent sidebar, loading/empty/error states, autosaved drafts, debounced search, throttled refresh, smart validation, bulk cancel, sortable data tables, advanced filters (price, dates, sort, hide sold out), keyboard shortcuts (`?`), plan tiers and usage meters, onboarding wizard, Refer & Earn page, custom 404, mobile tab bar, type-to-confirm deletes, offline recovery |
+| API reference | `/docs/api`, `/tickets/api-docs` | ShopSphere's 17 endpoints under `/api/ecom`; TicketTrail's 17 under `/api/tickets` (Swagger UI, `openapi.json` imports into Postman) |
 
 **Demo login:** `demo@practice.test` / `Demo@1234`. Coupons: `PRACTICE10`, `QA25`, `FREESHIP`, and `EXPIRED50` (inactive).
 

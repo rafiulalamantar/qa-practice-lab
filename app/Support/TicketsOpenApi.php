@@ -2,6 +2,7 @@
 
 namespace App\Support;
 
+use App\Http\Controllers\Api\Tickets\EventController;
 use App\Models\Event;
 
 /**
@@ -85,6 +86,12 @@ class TicketsOpenApi
                             $query('category', ['type' => 'string', 'enum' => Event::CATEGORIES], 'Filter by category'),
                             $query('city', ['type' => 'string'], 'Filter by city (case-insensitive exact match)'),
                             $query('search', ['type' => 'string'], 'Search title, description and venue'),
+                            $query('minPrice', ['type' => 'number', 'minimum' => 0, 'maximum' => 1000000], 'Lowest ticket price in BDT'),
+                            $query('maxPrice', ['type' => 'number', 'minimum' => 0, 'maximum' => 1000000], 'Highest ticket price in BDT (>= minPrice)'),
+                            $query('from', ['type' => 'string'], 'Events from this moment: a date (2026-12-01, whole UTC day) or a date-time with offset (2026-12-01T00:00:00+06:00)'),
+                            $query('to', ['type' => 'string'], 'Events up to this moment, same formats as from (>= from)'),
+                            $query('availableOnly', ['type' => 'boolean'], 'Hide events with no seats left for you'),
+                            $query('sort', ['type' => 'string', 'enum' => array_keys(EventController::SORTS), 'default' => 'date'], 'Sort order; a leading "-" means descending'),
                             ...$paging,
                         ],
                         'responses' => ['200' => $list('Event'), '400' => $validation, '401' => $unauthorized],
@@ -127,6 +134,14 @@ class TicketsOpenApi
                     'delete' => [
                         'tags' => ['Bookings'], 'summary' => 'Clear all your bookings (handy before a test run)',
                         'responses' => ['200' => ['description' => 'Cleared'] + $json(['type' => 'object', 'properties' => ['success' => ['type' => 'boolean'], 'message' => ['type' => 'string', 'example' => '3 booking(s) cleared'], 'deleted' => ['type' => 'integer', 'example' => 3]]]), '401' => $unauthorized],
+                    ],
+                ],
+                '/bookings/bulk-cancel' => [
+                    'post' => [
+                        'tags' => ['Bookings'], 'summary' => 'Cancel several bookings at once',
+                        'description' => 'Ids that are not yours (or no longer exist) are skipped and listed in notFound.',
+                        'requestBody' => ['required' => true] + $json(['type' => 'object', 'required' => ['ids'], 'properties' => ['ids' => ['type' => 'array', 'minItems' => 1, 'maxItems' => 100, 'items' => ['type' => 'integer', 'minimum' => 1], 'example' => [7, 8]]]]),
+                        'responses' => ['200' => ['description' => 'Cancelled'] + $json(['type' => 'object', 'properties' => ['success' => ['type' => 'boolean', 'example' => true], 'message' => ['type' => 'string', 'example' => '2 booking(s) cancelled'], 'cancelled' => ['type' => 'integer', 'example' => 2], 'notFound' => ['type' => 'array', 'items' => ['type' => 'integer'], 'example' => []]]]), '400' => $validation, '401' => $unauthorized],
                     ],
                 ],
                 '/bookings/ref/{ref}' => [

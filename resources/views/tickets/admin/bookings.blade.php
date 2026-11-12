@@ -1,4 +1,4 @@
-@extends('tickets.layout', ['page' => 'admin-bookings'])
+@extends('tickets.layout', ['page' => 'admin-bookings', 'sidebar' => true])
 
 @section('nav', true)
 @section('tt-title', 'Manage Bookings')
@@ -30,13 +30,26 @@
     </div>
 
     <div class="tt-card p-0 overflow-hidden">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 px-4 py-3 border-bottom">
+            <h2 class="h5 mb-0">Bookings</h2>
+            <div class="d-flex align-items-center gap-2">
+                <label class="small text-secondary text-nowrap" for="bookings-page-size">Rows</label>
+                <select class="form-select form-select-sm tt-page-size" id="bookings-page-size" data-testid="page-size-select">
+                    <option value="5">5</option><option value="10">10</option><option value="25">25</option>
+                </select>
+                <button class="btn btn-sm btn-outline-secondary text-nowrap" type="button" id="refresh-admin-bookings-btn" data-testid="refresh-btn" title="Refresh (r)"><i class="bi bi-arrow-clockwise me-1"></i> Refresh</button>
+                <button class="btn btn-sm btn-outline-secondary text-nowrap" type="button" id="export-csv-btn" data-testid="export-csv-btn" data-pro-feature="CSV export"><i class="bi bi-download me-1"></i> Export CSV <span class="tt-pro-tag" data-pro-tag><i class="bi bi-lock-fill"></i> PRO</span></button>
+            </div>
+        </div>
+        <div class="tt-select-all-note" id="select-all-note" data-testid="select-all-note" hidden></div>
         <div class="table-responsive">
             <table class="table align-middle mb-0 tt-table" id="admin-bookings-table" data-testid="admin-bookings-table">
-                <thead><tr><th scope="col">Reference</th><th scope="col">Event</th><th scope="col">Customer</th><th scope="col" class="text-center">Tickets</th><th scope="col">Total</th><th scope="col">Booked on</th><th scope="col" class="text-end">Actions</th></tr></thead>
+                <thead><tr><th scope="col" data-sort="ref">Reference</th><th scope="col" data-sort="event">Event</th><th scope="col" data-sort="customer">Customer</th><th scope="col" class="text-center" data-sort="quantity">Tickets</th><th scope="col" data-sort="total">Total</th><th scope="col" data-sort="created">Booked on</th><th scope="col" class="text-end">Actions</th></tr></thead>
                 <tbody id="admin-bookings-body"></tbody>
             </table>
         </div>
-        <div class="tt-empty" id="admin-bookings-empty" hidden><div class="tt-empty-icon"><i class="bi bi-receipt"></i></div><h3 class="h6">No bookings found</h3></div>
+        <div class="tt-empty" id="admin-bookings-empty" hidden><div class="tt-empty-icon"><i class="bi bi-receipt"></i></div><h3 class="h6">No bookings found</h3><p class="small text-secondary" data-empty-hint>Book an event and it will show up here.</p><button class="btn btn-sm btn-outline-secondary" type="button" id="clear-event-filter-btn" data-testid="clear-event-filter-btn" hidden>Show all events</button></div>
+        <div class="tt-empty" id="admin-bookings-error" data-testid="table-error" hidden><div class="tt-empty-icon" style="background:#fdecec;color:#e5484d"><i class="bi bi-wifi-off"></i></div><h3 class="h6">Couldn't load bookings</h3><button class="btn btn-sm btn-outline-secondary" type="button" data-retry><i class="bi bi-arrow-repeat me-1"></i> Retry</button></div>
         <nav class="tt-pager p-3 border-top" id="admin-bookings-pager" aria-label="Bookings pages" hidden>
             <button class="btn btn-outline-secondary btn-sm" type="button" data-page-prev data-testid="prev-page-btn"><i class="bi bi-arrow-left me-1"></i> Prev</button>
             <span class="small text-secondary" data-page-label data-testid="page-label"></span>
@@ -44,6 +57,12 @@
         </nav>
     </div>
 </main>
+
+<div class="tt-bulkbar" id="bulk-bar" data-testid="bulk-bar" role="region" aria-label="Bulk actions" hidden>
+    <span><strong id="bulk-count" data-testid="bulk-count">0</strong> selected</span>
+    <button class="btn btn-sm btn-danger" type="button" id="bulk-cancel-btn" data-testid="bulk-cancel-btn"><i class="bi bi-x-circle me-1"></i> Cancel selected</button>
+    <button class="btn btn-sm btn-link text-white" type="button" id="bulk-clear-btn" data-testid="bulk-clear-btn">Clear selection</button>
+</div>
 
 <div class="modal fade" id="booking-modal" tabindex="-1" aria-labelledby="booking-modal-title" aria-hidden="true" data-testid="booking-modal">
     <div class="modal-dialog modal-dialog-centered">
